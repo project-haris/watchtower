@@ -1,0 +1,18 @@
+- name: PLAYBOOK FOR GROUP 'MSOC core nodes'
+  hosts: haris_citadel
+  # Stagger rollout over groups of 7
+  #serial: 7
+  # default 
+  remote user: rocky
+  #remote_user: ansible
+  become: true
+  vars:
+    ansible_become_method: sudo
+    ansible_distribution: RedHat
+    ansible_os_family: RedHat
+  vars_files:
+    - ../vars_common_all.yml
+    - ../vars_disabled_roles.yml
+
+  roles:
+    - { role: soft_yum,tags: [soft, soft_yum],when: not (disabled_roles.soft_yum | default(false)) }

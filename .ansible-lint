@@ -1,0 +1,29 @@
+---
+# Exclude paths
+exclude_paths:
+  - .git/
+  - bin/
+  - .gitignore
+  - logs/
+  - temp/
+  - roles/openondemand_custom/files/*.yml
+
+# Skip rules or tags listed below
+skip_list:
+  - no-handler
+  - braces
+  - jinja[spacing]
+  - yaml[trailing-spaces]
+  - yaml[new-line-at-end-of-file]
+  - yaml[comments]
+  - yaml[line-length]
+  - args[module]
+  - no-free-form
+  - risky-shell-pipe
+  - name[template]
+  - latest[git]
+
+# Do not fail on warnings from the rules or tags listed below
+warn_list:
+  - experimental
+  - package-latest

@@ -1,0 +1,40 @@
+vars_common_all_sysctl_items:
+  - name: net.ipv6.conf.all.disable_ipv6
+    value: "1"
+    file: 98-disable_ipv6.conf
+  - name: net.ipv6.conf.default.disable_ipv6
+    value: "1"
+    file: 98-disable_ipv6.conf
+  - name: net.ipv6.conf.lo.disable_ipv6
+    value: "1"
+    file: 98-disable_ipv6.conf
+
+vars_common_all_cron_clean_tmp_montly:
+  - name: "Clean /tmp"
+    user: root
+    minute: "0"
+    hour: "10"
+    day: "*"
+    month: "*"
+    weekday: "1"
+    job: "find /tmp -mmin +43200 -delete"
+
+
+# Users
+vars_common_all_users_deleted:
+  - name: "rocky"
+  - name: "debian"
+  - name: "ubuntu"
+vars_common_all_root_user:
+  - name: "root"
+    homedir: "/root"
+    passwd: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          66326466623233333338613262326234353064343561656130353266316237366565353364383265
+          6630623562383331356337636266613032336338666436330a323066656433323233373462333464
+          63613866626535646235616163356439623632376637326536633065333335396664636462386365
+          3937653530393337380a373430373266376161303535383930616562396632643438333831353934
+          6662
+
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l"

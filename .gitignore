@@ -1,6 +1,82 @@
-# Ignore build outputs from performing a nix-build or `nix build` command
-result
-result-*
+# VSCode
+.vscode/*
+.vscode
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+shell.nix
+.history/
+.ansible
+ 
+# Common credential files
+**/credentials.json
+**/client_secrets.json
+**/client_secret.json
+*creds*
+*.dat
+*.httr-oauth*
+*.key
+*.pem
+*.cert
+secrets/
+secret/
 
-# Ignore automatically generated direnv output
-.direnv
+# Temp files
+*.bak
+*.tmp
+*.temp
+*.zip
+roles/vault/files/vault
+notes.md
+
+# Logs
+logs/*
+*.log
+
+# Sensitive Ansible files
+.ansible-vault-pass
+
+# Roles from requirements.yml
+# (because they might not adhere to our lint rules)
+roles/chrony
+roles/firewalld
+roles/letsencrypt
+roles/loki_promtail
+roles/mounts_exports
+roles/netplan
+roles/networking
+roles/ifupdown
+roles/podman
+roles/resolv_hosts
+roles/rsyslog
+roles/soft_apt
+roles/soft_yum
+roles/soft_repo
+roles/sshd
+roles/sysctl
+roles/users_groups
+#roles/zabbix_agent
+roles/mysql
+roles/zabbix_repo
+roles/cron
+roles/pip
+roles/logrotate
+roles/selinux
+roles/apache
+roles/network
+roles/networkmanager
+roles/openondemand
+roles/nginx
+roles/docker
+roles/gitlab_runner
+roles/ad
+roles/sssd
+roles/ldap_client
+roles/pam
+roles/nsswitch
+roles/krb5
+roles/vault_auth
+roles/vault_ssh_auth
+roles/proxmox
