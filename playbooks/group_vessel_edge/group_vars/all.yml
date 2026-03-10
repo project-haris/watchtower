@@ -2,9 +2,7 @@
 
 # systctl
 sysctl_items: "{{ vars_common_all_sysctl_items }}"
-# soft_yum
-soft_packages_latest: "{{ vars_common_all_admin_packages }}"
-
+soft_packages_latest: "{{ vars_common_all_packages_apt }}"
 # sshd
 users_auth_keys_etc: true
 sshd: "{{ vars_common_all_sshd }}"
@@ -17,9 +15,9 @@ tailscale_authkey: "{{ vars_common_all_tailscale_auth_key }}"
 tailscale_args: "--ssh"
 
 # cron
-# cron_service_enabled: yes
-# cron_service_state: started
-# cron_tasks: "{{ vars_common_all_cron_clean_tmp_montly }}"
+cron_service_enabled: yes
+cron_service_state: started
+cron_tasks: "{{ vars_common_all_cron_clean_tmp_montly }}"
 
 etc_bashrc_entries:
   - "HISTSIZE=10000"

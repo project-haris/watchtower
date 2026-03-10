@@ -41,11 +41,12 @@ vars_common_all_sshd:
   ClientAliveCountMax: 2
 
 manage_hostname: true
-hostname: "{{ inventory_hostname }}.tailb05740.ts.net"
-manage_resolv: true
-searchdomain: "tailb05740.ts.net"
-nameservers:
-  - 100.100.100.100
+hostname: "{{ inventory_hostname }}"
+# not needed since Tailscale is managing the connections
+# manage_resolv: true
+# searchdomain: "tailb05740.ts.net"
+# nameservers:
+#   - 100.100.100.100
 
 
 # Tailscale
@@ -58,7 +59,6 @@ vars_common_all_tailscale_auth_key: !vault |
           35343063346533386566316631306165636561353735303935376333313965393664396436383637
           36343265373039313861346233616164376537636166353362326364353636663261366563663439
           393736643261643961663830643634663464
-
 
 # cron
 vars_common_all_cron_clean_tmp_montly:
@@ -95,7 +95,6 @@ vars_common_all_admin_users:
           3662
     ssh_authorized_keys:
       - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
-    sudo: "%admin ALL=(ALL) NOPASSWD: ALL"
   - name: "ansible"
     uid: "10002"
     primary_group: "admin"
@@ -109,26 +108,35 @@ vars_common_all_admin_users:
     homedir: "/home/admin"
     ssh_authorized_keys:
       - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+    sudo: "%admin ALL=(ALL) NOPASSWD: ALL"
 
 # soft_yum
-vars_common_all_admin_packages:
-  - bind-utils
-  - telnet
+vars_common_all_packages_yum:
   - tcpdump
   - tar
   - unzip
   - vim
   - wget
   - htop
-  - rdiff-backup 
-  - smartmontools
-  - net-tools
-  - iptables-nft
+  - traceroute
   - git
   - ansible-core
-  #- firewalld
-  - wireguard-tools
+  - net-tools
+  - iptables-nft
+  - bind-utils
+
+# soft_apt
+vars_common_all_packages_apt:
+  - tcpdump
+  - tar
+  - unzip
+  - vim
+  - wget
+  - htop
   - traceroute
+  - git
+  - ansible-core
+  - dnsutils
 
 # firewalld
 vars_common_all_estonian_ips:

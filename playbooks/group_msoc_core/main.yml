@@ -16,12 +16,12 @@
     - { role: sshd, tags: [sshd], when: not (disabled_roles.sshd | default(false)) }   
     - { role: soft_yum, tags: [soft, soft_yum], when: not (disabled_roles.soft_yum | default(false)) }
     - { role: firewalld, tags: [firewalld], when: not (disabled_roles.firewalld | default(false)) }
-    #- { role: tailscale, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
-    #- { role: wireguard, tags: [wireguard], when: not (disabled_roles.wireguard | default(false)) }
     - { role: resolv_hosts, tags: [resolv_hosts], when: not (disabled_roles.resolv_hosts | default(false)) }
+    - { role: tailscale, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
+    - { role: cron, tags: [cron], when: not (disabled_roles.cron | default(false)) }
     # - { role: zabbix_agent,   tags: [zabbix_agent],             when: not (disabled_roles.zabbix_agent | default(false)) }
     # - { role: rsyslog,        tags: [rsyslog],                  when: not (disabled_roles.rsyslog | default(false)) }
     # - { role: custom_files,   tags: [custom_files,vault_auth],          when: not (disabled_roles.custom_files | default(false)) }
     # - { role: networkmanager,        tags: [networkmanager] }
     # - { role: pam,            tags: [pam,ad_auth],                          when: not (disabled_roles.pam | default(false)) }
-    # - { role: cron,           tags: [cron] }
+
