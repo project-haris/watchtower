@@ -2,9 +2,9 @@
 #ansible_ssh_common_args='-o ForwardAgent=yes -o ProxyCommand="ssh -W %h:%p base"'
 
 [msoc_core]
-haris_citadel      ansible_host=10.10.0.1   internal_addr=192.168.42.184 public_addr=193.40.157.235 
-0ver5ight          ansible_host=10.10.0.2   internal_addr=192.168.42.210 public_addr=193.40.157.186
+haris-gateway      ansible_host=100.105.105.88      public_addr=193.40.157.80
+haris-citadel      ansible_host=100.126.59.101      public_addr=193.40.157.235 
 
 [vessel_edge]
-haris_sinilind     ansible_host=10.10.0.3  vpn_addr=172.21.5.204
+haris-sinilind     ansible_host=10.10.0.3  vpn_addr=172.21.5.204
 

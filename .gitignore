@@ -57,7 +57,6 @@ roles/soft_repo
 roles/sshd
 roles/sysctl
 roles/users_groups
-#roles/zabbix_agent
 roles/mysql
 roles/zabbix_repo
 roles/cron
@@ -76,7 +75,6 @@ roles/sssd
 roles/ldap_client
 roles/pam
 roles/nsswitch
-roles/krb5
-roles/vault_auth
-roles/vault_ssh_auth
-roles/proxmox
+roles/wireguard
+roles/linux_hardening
+roles/tailscale
