@@ -6,5 +6,5 @@ haris-gateway      ansible_host=100.105.105.88      public_addr=193.40.157.80
 haris-citadel      ansible_host=100.126.59.101      public_addr=193.40.157.235 
 
 [vessel_edge]
-haris-sinilind     ansible_host=10.10.0.3  vpn_addr=172.21.5.204
+haris-sinilind     ansible_host=100.116.62.31  vpn_addr=172.21.5.204
 

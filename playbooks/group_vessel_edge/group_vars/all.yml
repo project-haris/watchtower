@@ -1,0 +1,31 @@
+#ansible_python_interpreter: /usr/bin/python3
+
+# systctl
+sysctl_items: "{{ vars_common_all_sysctl_items }}"
+# soft_yum
+soft_packages_latest: "{{ vars_common_all_admin_packages }}"
+
+# sshd
+users_auth_keys_etc: true
+sshd: "{{ vars_common_all_sshd }}"
+
+# Users
+users: "{{ vars_common_all_root_user + vars_common_all_admin_users }}"
+users_deleted: "{{ vars_common_all_users_deleted }}"
+
+tailscale_authkey: "{{ vars_common_all_tailscale_auth_key }}"
+tailscale_args: "--ssh"
+
+# cron
+# cron_service_enabled: yes
+# cron_service_state: started
+# cron_tasks: "{{ vars_common_all_cron_clean_tmp_montly }}"
+
+etc_bashrc_entries:
+  - "HISTSIZE=10000"
+  - "HISTFILESIZE=20000"
+  - "alias ll='ls -lart --color=auto'"
+  - "alias grep='grep --color=auto'"
+  - "shopt -s histappend"
+  - "export EDITOR=vim"
+  - "export VISUAL=vim"
