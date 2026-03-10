@@ -1,0 +1,362 @@
+#sysctl
+vars_common_all_sysctl_items:
+  - name: net.ipv6.conf.all.disable_ipv6
+    value: "1"
+    file: 98-disable_ipv6.conf
+  - name: net.ipv6.conf.default.disable_ipv6
+    value: "1"
+    file: 98-disable_ipv6.conf
+  - name: net.ipv6.conf.lo.disable_ipv6
+    value: "1"
+    file: 98-disable_ipv6.conf
+
+vars_common_all_sshd:
+  # Logging and Connection
+  SyslogFacility: "AUTHPRIV"
+  LogLevel: "INFO"
+  AddressFamily: "inet"
+  UseDNS: "no"
+  # Authentication
+  PermitRootLogin: "prohibit-password"
+  PubkeyAuthentication: "yes"
+  AuthorizedKeysFile: "/etc/AuthorizedKeys/%u"
+  #PasswordAuthentication: "yes"
+  ChallengeResponseAuthentication: "no"
+  # Kerberos / GSSAPI
+  GSSAPIAuthentication: "no"
+  GSSAPICleanupCredentials: "no"
+  KerberosAuthentication: "no" 
+  # Access Control
+  AllowGroups: "admin root" 
+  # Features and Environment
+  X11Forwarding: "yes"
+  UsePAM: "yes"
+  PrintMotd: "no"
+  AcceptEnv: >-
+    LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+    LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+    LC_IDENTIFICATION LC_ALL LANGUAGE XMODIFIERS  
+  # Timeouts
+  ClientAliveInterval: 30
+  ClientAliveCountMax: 2
+
+manage_hostname: true
+hostname: "{{ inventory_hostname }}.tailb05740.ts.net"
+manage_resolv: true
+searchdomain: "tailb05740.ts.net"
+nameservers:
+  - 100.100.100.100
+
+
+# Tailscale
+vars_common_all_tailscale_auth_key: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          36613436623231363865396430383037356635613536613831653931343063373939666162613366
+          3864653633306633643431323936663839636266636166620a666131373266633730383532646539
+          30616634626235323036613966653232396636353064326638633266656433306666663639346162
+          3266303434386362320a343931666638346364626566396633656435386163666565623965383636
+          35343063346533386566316631306165636561353735303935376333313965393664396436383637
+          36343265373039313861346233616164376537636166353362326364353636663261366563663439
+          393736643261643961663830643634663464
+
+
+# cron
+vars_common_all_cron_clean_tmp_montly:
+  - name: "Clean /tmp"
+    user: root
+    minute: "0"
+    hour: "10"
+    day: "*"
+    month: "*"
+    weekday: "1"
+    job: "find /tmp -mmin +43200 -delete"
+
+# users_groups
+vars_common_all_users_deleted:
+  - name: "rocky"
+  - name: "debian"
+  - name: "ubuntu"
+vars_common_all_root_user:
+  - name: "root"
+    homedir: "/root"
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+vars_common_all_admin_users:
+  - name: "ahmed"
+    uid: "10001"
+    primary_group: "admin"
+    homedir: "/home/ahmed"
+    passwd: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62383665633230303865383937366261646331313238643933626632383336356336613932393465
+          3139393835333465343066366337313766623731393834360a386634303030393061346335643666
+          66633431393262636530646361393164376430333838656435653631653233323730386532333663
+          6439366131383438650a653766366434346335353639363666653133383437333763353864626363
+          3662
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+    sudo: "%admin ALL=(ALL) NOPASSWD: ALL"
+  - name: "ansible"
+    uid: "10002"
+    primary_group: "admin"
+    homedir: "/home/ansible"
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+  - name: "admin"
+    uid: "10015"
+    primary_group: "admin"
+    homedir: "/home/admin"
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+
+# soft_yum
+vars_common_all_admin_packages:
+  - bind-utils
+  - telnet
+  - tcpdump
+  - tar
+  - unzip
+  - vim
+  - wget
+  - htop
+  - rdiff-backup 
+  - smartmontools
+  - net-tools
+  - iptables-nft
+  - git
+  #- firewalld
+  - wireguard-tools
+  - traceroute
+
+# firewalld
+vars_common_all_estonian_ips:
+  - address: "193.40.0.0/16"
+  - address: "90.190.0.0/15"
+  - address: "88.196.0.0/16"
+  - address: "85.253.0.0/16"
+  - address: "84.50.0.0/16"
+  - address: "46.131.0.0/16"
+  - address: "82.131.0.0/17"
+  - address: "80.235.0.0/17"
+  - address: "217.159.128.0/17"
+  - address: "213.35.128.0/17"
+  - address: "176.46.0.0/17"
+  - address: "94.246.192.0/18"
+  - address: "91.131.192.0/18"
+  - address: "89.235.192.0/18"
+  - address: "85.29.192.0/18"
+  - address: "85.196.192.0/18"
+  - address: "84.52.0.0/18"
+  - address: "83.191.192.0/18"
+  - address: "62.65.192.0/18"
+  - address: "37.157.64.0/18"
+  - address: "213.219.64.0/18"
+  - address: "195.50.192.0/18"
+  - address: "194.204.0.0/18"
+  - address: "78.28.64.0/19"
+  - address: "85.153.66.0/23"
+  - address: "94.186.0.0/19"
+  - address: "91.146.64.0/19"
+  - address: "91.129.96.0/19"
+  - address: "87.119.160.0/19"
+  - address: "86.110.32.0/19"
+  - address: "85.89.32.0/19"
+  - address: "83.180.0.0/19"
+  - address: "83.179.128.0/19"
+  - address: "83.176.0.0/19"
+  - address: "83.166.32.0/19"
+  - address: "82.147.160.0/19"
+  - address: "62.65.32.0/19"
+  - address: "46.39.128.0/19"
+  - address: "213.184.32.0/19"
+  - address: "213.180.0.0/19"
+  - address: "213.168.0.0/19"
+  - address: "212.7.0.0/19"
+  - address: "212.53.96.0/19"
+  - address: "212.119.128.0/19"
+  - address: "212.107.32.0/19"
+  - address: "195.80.96.0/19"
+  - address: "195.250.160.0/19"
+  - address: "194.126.96.0/19"
+  - address: "194.106.96.0/19"
+  - address: "145.14.16.0/20"
+  - address: "95.153.0.0/20"
+  - address: "77.233.64.0/20"
+  - address: "85.153.104.0/21"
+  - address: "212.27.232.0/21"
+  - address: "85.153.12.0/22"
+  - address: "95.153.29.22/31"
+  - address: "93.185.240.0/20"
+  - address: "92.62.96.0/20"
+  - address: "89.221.64.0/20"
+  - address: "83.187.128.0/20"
+  - address: "81.90.112.0/20"
+  - address: "81.25.240.0/20"
+  - address: "81.20.144.0/20"
+  - address: "80.66.240.0/20"
+  - address: "80.250.112.0/20"
+  - address: "78.110.32.0/20"
+  - address: "57.87.128.0/20"
+  - address: "5.45.112.0/20"
+  - address: "5.101.176.0/20"
+  - address: "5.101.112.0/20"
+  - address: "217.71.32.0/20"
+  - address: "217.146.64.0/20"
+  - address: "213.100.224.0/20"
+  - address: "188.0.48.0/20"
+  - address: "176.112.144.0/20"
+  - address: "85.153.44.0/22"
+  - address: "95.153.51.46/31"
+  - address: "95.153.54.0/24"
+  - address: "5.188.16.0/21"
+  - address: "165.231.170.0/23"
+  - address: "85.153.34.0/23"
+  - address: "95.129.192.0/21"
+  - address: "90.130.40.0/21"
+  - address: "90.130.128.0/21"
+  - address: "78.24.192.0/21"
+  - address: "5.44.184.0/21"
+  - address: "46.36.216.0/21"
+  - address: "46.226.136.0/21"
+  - address: "46.16.112.0/21"
+  - address: "37.143.64.0/21"
+  - address: "37.0.24.0/21"
+  - address: "31.24.56.0/21"
+  - address: "213.100.248.0/21"
+  - address: "188.95.208.0/21"
+  - address: "188.92.160.0/21"
+  - address: "188.66.0.0/21"
+  - address: "188.227.248.0/21"
+  - address: "178.248.136.0/21"
+  - address: "178.23.112.0/21"
+  - address: "178.21.240.0/21"
+  - address: "159.253.16.0/21"
+  - address: "146.255.176.0/21"
+  - address: "109.235.240.0/21"
+  - address: "213.187.249.0/24"
+  - address: "85.234.242.0/23"
+  - address: "62.128.116.0/22"
+  - address: "185.174.159.0/24"
+  - address: "149.5.208.0/22"
+  - address: "81.21.246.98/31"
+  - address: "62.128.108.0/22"
+  - address: "95.215.132.0/22"
+  - address: "94.154.144.0/22"
+  - address: "92.119.172.0/22"
+  - address: "91.203.28.0/22"
+  - address: "87.98.42.0/23"
+  - address: "85.194.200.0/22"
+  - address: "85.153.6.0/23"
+  - address: "85.115.204.0/22"
+  - address: "83.187.148.0/22"
+  - address: "77.240.240.0/22"
+  - address: "57.86.160.0/22"
+  - address: "5.253.176.0/22"
+  - address: "45.92.100.0/22"
+  - address: "45.83.72.0/22"
+  - address: "45.83.52.0/22"
+  - address: "45.82.76.0/22"
+  - address: "45.67.128.0/22"
+  - address: "45.158.52.0/22"
+  - address: "45.157.192.0/22"
+  - address: "45.156.32.0/22"
+  - address: "45.148.60.0/22"
+  - address: "45.146.76.0/22"
+  - address: "45.145.104.0/22"
+  - address: "45.144.4.0/22"
+  - address: "45.142.100.0/22"
+  - address: "45.140.48.0/22"
+  - address: "45.136.48.0/22"
+  - address: "45.136.196.0/22"
+  - address: "45.134.112.0/22"
+  - address: "45.132.188.0/22"
+  - address: "45.129.52.0/22"
+  - address: "37.153.152.0/22"
+  - address: "31.131.88.0/24"
+  - address: "2.59.164.0/22"
+  - address: "2.57.220.0/22"
+  - address: "213.130.212.0/22"
+  - address: "213.130.196.0/22"
+  - address: "213.103.164.0/22"
+  - address: "213.102.48.0/22"
+  - address: "213.100.136.0/22"
+  - address: "212.102.144.0/22"
+  - address: "196.196.216.0/22"
+  - address: "195.34.212.0/22"
+  - address: "195.222.28.0/22"
+  - address: "194.93.64.0/22"
+  - address: "194.61.72.0/22"
+  - address: "194.55.8.0/22"
+  - address: "194.5.180.0/22"
+  - address: "194.32.140.0/22"
+  - address: "194.15.248.0/22"
+  - address: "194.150.64.0/22"
+  - address: "194.0.104.0/22"
+  - address: "193.31.108.0/22"
+  - address: "193.221.204.0/22"
+  - address: "193.202.40.0/22"
+  - address: "193.148.76.0/22"
+  - address: "185.97.36.0/22"
+  - address: "185.97.248.0/22"
+  - address: "185.94.112.0/22"
+  - address: "185.87.216.0/22"
+  - address: "185.83.4.0/22"
+  - address: "185.78.44.0/22"
+  - address: "185.73.132.0/22"
+  - address: "185.7.252.0/22"
+  - address: "185.68.208.0/22"
+  - address: "185.59.32.0/22"
+  - address: "185.56.160.0/22"
+  - address: "185.50.96.0/22"
+  - address: "185.4.72.0/22"
+  - address: "185.46.20.0/22"
+  - address: "185.45.140.0/22"
+  - address: "185.43.104.0/22"
+  - address: "185.40.236.0/22"
+  - address: "185.37.252.0/22"
+  - address: "185.31.92.0/22"
+  - address: "185.31.240.0/22"
+  - address: "185.250.152.0/22"
+  - address: "185.244.100.0/22"
+  - address: "185.240.104.0/22"
+  - address: "185.236.32.0/22"
+  - address: "185.235.160.0/22"
+  - address: "185.232.28.0/22"
+  - address: "185.231.108.0/22"
+  - address: "185.220.132.0/22"
+  - address: "185.215.184.0/22"
+  - address: "185.209.96.0/22"
+  - address: "185.20.56.0/22"
+  - address: "185.20.100.0/22"
+  - address: "185.200.68.0/22"
+  - address: "185.195.20.0/22"
+  - address: "185.193.60.0/22"
+  - address: "185.191.16.0/22"
+  - address: "185.18.160.0/22"
+  - address: "185.172.24.0/22"
+  - address: "185.169.68.0/22"
+  - address: "185.161.84.0/22"
+  - address: "185.158.176.0/22"
+  - address: "185.157.108.0/22"
+  - address: "185.155.252.0/22"
+  - address: "185.154.220.0/22"
+  - address: "185.153.144.0/22"
+  - address: "185.147.120.0/22"
+  - address: "185.145.4.0/22"
+  - address: "185.14.216.0/22"
+  - address: "185.139.252.0/22"
+  - address: "185.13.16.0/22"
+  - address: "185.125.136.0/22"
+  - address: "185.12.236.0/22"
+  - address: "185.118.160.0/22"
+  - address: "185.117.64.0/22"
+  - address: "185.114.176.0/22"
+  - address: "185.113.252.0/22"
+  - address: "178.236.200.0/22"
+  - address: "176.118.4.0/22"
+  - address: "172.69.136.0/22"
+  - address: "171.22.244.0/22"
+  - address: "160.238.116.0/22"
+  - address: "151.0.52.0/22"
+  - address: "185.73.124.0/23"
+  - address: "91.131.89.96/17"

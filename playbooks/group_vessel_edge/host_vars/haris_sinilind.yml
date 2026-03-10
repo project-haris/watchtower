@@ -1,0 +1,15 @@
+# Wireguard Client Configuration (haris_sinilind)
+wireguard_interface: wg0
+wireguard_port: 51820
+wireguard_addresses:
+  - "10.0.0.3/24"
+wireguard_endpoint: ""
+wireguard_persistent_keepalive: "25"
+
+# Gateway as the only peer
+wireguard_unmanaged_peers:
+  haris_gateway:
+    public_key: "{{ wg0_haris_gateway_pubkey }}"
+    allowed_ips: "0.0.0.0/0"
+    endpoint: "{{ hostvars['haris_gateway']['public_addr'] }}:51820"
+    persistent_keepalive: 25
