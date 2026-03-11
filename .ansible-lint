@@ -6,7 +6,6 @@ exclude_paths:
   - .gitignore
   - logs/
   - temp/
-  - roles/openondemand_custom/files/*.yml
 
 # Skip rules or tags listed below
 skip_list:

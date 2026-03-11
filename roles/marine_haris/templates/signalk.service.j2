@@ -1,0 +1,18 @@
+[Unit]
+Description=Signal K Server for {{ haris_vessel_name }}
+Documentation=https://signalk.org
+After=network.target
+
+[Service]
+Type=simple
+User={{ haris_user }}
+Group={{ haris_group }}
+WorkingDirectory={{ haris_home }}
+# Using node directly to run the global package
+# Note: NPM global binaries are usually in /usr/local/bin or /usr/bin
+ExecStart=/usr/bin/signalk-server
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

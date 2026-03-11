@@ -1,0 +1,4 @@
+haris_vessel_id: "VESSEL-SINILIND"
+haris_vessel_name: "SINILIND"
+signalk_admin_password: "secure_pass_123"
+elasticsearch_heap_size: "4g"

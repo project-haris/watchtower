@@ -1,0 +1,21 @@
+{
+  "vessel": {
+    "name": "{{ haris_vessel_name }}",
+    "mmsi": "{{ haris_vessel_id }}"
+  },
+  "interfaces": {
+    "nmea0183": {
+      "enabled": true,
+      "device": "{{ haris_nmea0183_port }}",
+      "baud": {{ haris_nmea0183_baud }}
+    },
+    "nmea2000": {
+      "enabled": true,
+      "type": "canbus",
+      "interface": "{{ haris_nmea2000_interface }}"
+    }
+  },
+  "security": {
+    "admin_password": "{{ signalk_admin_password }}"
+  }
+}

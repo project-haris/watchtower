@@ -112,6 +112,8 @@ vars_common_all_admin_users:
 
 # soft_yum
 vars_common_all_packages_yum:
+  - plocate
+  - tree
   - tcpdump
   - tar
   - unzip
@@ -127,6 +129,8 @@ vars_common_all_packages_yum:
 
 # soft_apt
 vars_common_all_packages_apt:
+  - plocate
+  - tree
   - tcpdump
   - tar
   - unzip
@@ -137,6 +141,43 @@ vars_common_all_packages_apt:
   - git
   - ansible-core
   - dnsutils
+
+# firewalld zones
+# vars_common_all_firewalld_zones:
+#   - name: public
+#     description: "Public zone for external access, restricted to essential services"
+#     services:
+#       - ssh
+#       - https
+#     ports: []  
+#     sources: "{{ vars_common_all_estonian_ips }}"  
+#     interfaces: []  
+#     masquerade: false
+#     forward_ports: [] 
+#     icmp_block_inversion: false
+
+#   - name: internal
+#     description: "Internal zone for trusted networks, allowing more services"
+#     services:
+#       - ssh
+#       - https
+#       - http
+#     ports: []
+#     sources: [] 
+#     interfaces: ["tailscale0"]
+#     masquerade: false
+#     forward_ports: []
+#     icmp_block_inversion: false
+
+#   - name: drop
+#     description: "Drop zone for maximum security, blocks all traffic"
+#     services: []
+#     ports: []
+#     sources: []
+#     interfaces: []
+#     masquerade: false
+#     forward_ports: []
+#     icmp_block_inversion: true
 
 # firewalld
 vars_common_all_estonian_ips:

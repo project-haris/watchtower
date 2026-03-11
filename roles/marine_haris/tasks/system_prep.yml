@@ -1,0 +1,85 @@
+- name: Install required system packages
+  apt:
+    name:
+      - openjdk-21-jre-headless
+      - nodejs
+      - npm
+      - python3
+      - python3-pip
+      - can-utils
+      - apt-transport-https
+      - gnupg
+      - ifupdown
+    state: present
+    update_cache: yes
+
+- name: Create Haris group
+  group:
+    name: "{{ haris_group }}"
+    state: present
+
+- name: Create Haris user
+  user:
+    name: "{{ haris_user }}"
+    group: "{{ haris_group }}"
+    shell: /bin/bash
+    home: "{{ haris_home }}"
+    system: yes
+    groups: "dialout,gpio,plugdev"
+    append: yes
+
+# --- PICAN Hardware Initialization ---
+
+- name: Check if this is a Raspberry Pi
+  stat:
+    path: /boot/firmware/config.txt
+  register: rpi_boot_config_new
+
+- name: Check if this is a Raspberry Pi (Legacy Path)
+  stat:
+    path: /boot/config.txt
+  register: rpi_boot_config_legacy
+
+- name: Determine Boot Config Path
+  set_fact:
+    boot_config_path: "{{ '/boot/firmware/config.txt' if rpi_boot_config_new.stat.exists else '/boot/config.txt' }}"
+
+- name: Add PiCAN-M Overlay to Boot Config (Enables Hardware)
+  lineinfile:
+    path: "{{ boot_config_path }}"
+    line: "{{ item }}"
+    state: present
+    create: yes
+  loop:
+    - "# --- Marine Haris PiCAN Config ---"
+    - "dtparam=spi=on"
+    # The line below assumes a standard PiCAN-M (MCP2515). 
+    - "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25"
+  register: boot_config
+
+- name: Reboot to load CAN Hardware Overlay
+  reboot:
+    msg: "Rebooting to initialize CAN hardware..."
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+    test_command: uptime
+  when: boot_config.changed
+
+- name: Ensure network interfaces directory exists
+  file:
+    path: /etc/network/interfaces.d
+    state: directory
+    mode: '0755'
+
+- name: Enable CAN interface networking
+  copy:
+    dest: /etc/network/interfaces.d/can0
+    content: |
+      auto can0
+      iface can0 inet manual
+        pre-up /sbin/ip link set can0 type can bitrate 250000
+        up /sbin/ifconfig can0 up
+        down /sbin/ifconfig can0 down
+  notify: Restart Network

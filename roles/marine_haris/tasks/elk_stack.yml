@@ -1,0 +1,74 @@
+- name: Ensure keyrings directory exists
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Elastic GPG key
+  get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: /usr/share/keyrings/elastic-keyring.asc
+    mode: '0644'
+
+- name: Dearmor Elastic GPG key (Convert to binary format)
+  command: gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg /usr/share/keyrings/elastic-keyring.asc
+  args:
+    creates: /usr/share/keyrings/elastic-archive-keyring.gpg
+
+- name: Add Elastic repository (Signed-by method)
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/{{ elasticsearch_version }}/apt stable main"
+    state: present
+    filename: elastic-{{ elasticsearch_version }}
+    update_cache: yes
+
+- name: Install Elasticsearch
+  apt:
+    name: elasticsearch
+    state: present
+
+- name: Configure Elasticsearch JVM Heap
+  lineinfile:
+    path: /etc/elasticsearch/jvm.options
+    regexp: '^-Xms'
+    line: "-Xms{{ elasticsearch_heap_size }}"
+  notify: Restart Elasticsearch
+
+- name: Configure Elasticsearch JVM Heap Max
+  lineinfile:
+    path: /etc/elasticsearch/jvm.options
+    regexp: '^-Xmx'
+    line: "-Xmx{{ elasticsearch_heap_size }}"
+  notify: Restart Elasticsearch
+
+- name: Deploy Elasticsearch Config
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+  notify: Restart Elasticsearch
+
+- name: Install Logstash
+  apt:
+    name: logstash
+    state: present
+
+- name: Deploy Logstash Pipeline Config
+  template:
+    src: logstash.conf.j2
+    dest: "{{ logstash_conf_dir }}/maritime_pipeline.conf"
+  notify: Restart Logstash
+
+- name: Install Kibana
+  apt:
+    name: kibana
+    state: present
+
+- name: Start and Enable ELK Services
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - elasticsearch
+    - logstash
+    - kibana

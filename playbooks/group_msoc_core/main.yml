@@ -4,7 +4,7 @@
   become: true
   vars:
     ansible_become_method: sudo
-    ansible_host: "{{ public_addr }}"
+    #ansible_host: "{{ public_addr }}"
   vars_files:
     - ../../vars_common_all.yml
     - ../../vars_disabled_roles.yml

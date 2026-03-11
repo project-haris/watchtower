@@ -1,0 +1,27 @@
+- name: Install Signal K Server globally
+  npm:
+    name: signalk-server
+    version: "{{ signalk_version }}"
+    global: yes
+    state: present
+
+- name: Create Signal K config directory
+  file:
+    path: "{{ haris_home }}/.signalk"
+    state: directory
+    owner: "{{ haris_user }}"
+    group: "{{ haris_group }}"
+
+- name: Deploy Signal K Settings
+  template:
+    src: signalk_settings.json.j2
+    dest: "{{ haris_home }}/.signalk/settings.json"
+    owner: "{{ haris_user }}"
+    group: "{{ haris_group }}"
+  notify: Restart Signal K
+
+- name: Create Signal K Systemd Service
+  template:
+    src: signalk.service.j2
+    dest: /etc/systemd/system/signalk.service
+  notify: Restart Signal K

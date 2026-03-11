@@ -1,0 +1,18 @@
+input {
+  file {
+    path => "{{ haris_home }}/logs/nmea_data.log"
+    codec => "json"
+    sincedb_path => "/dev/null"
+  }
+}
+
+filter {
+  # Add specific parsing logic here if needed
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "haris-%{+YYYY.MM.dd}"
+  }
+}

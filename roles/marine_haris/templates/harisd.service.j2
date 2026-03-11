@@ -1,0 +1,13 @@
+[Unit]
+Description=Marine Haris Data Collector
+After=network.target
+
+[Service]
+Type=simple
+User={{ haris_user }}
+WorkingDirectory={{ haris_home }}
+ExecStart=/usr/bin/python3 {{ haris_home }}/src/data_aggregator.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
