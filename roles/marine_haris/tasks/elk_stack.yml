@@ -62,6 +62,12 @@
   apt:
     name: kibana
     state: present
+    
+- name: Deploy Kibana Config
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+  notify: Restart Kibana
 
 - name: Start and Enable ELK Services
   service:

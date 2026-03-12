@@ -20,6 +20,7 @@
     - { role: tailscale, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
     - { role: cron, tags: [cron], when: not (disabled_roles.cron | default(false)) }
     - { role: marine_haris, tags: [marine_haris], when: not (disabled_roles.marine_haris | default(false)) }
+    - { role: chrony, tags: [chrony], when: not (disabled_roles.chrony | default(false)) }
     # - { role: zabbix_agent,   tags: [zabbix_agent],             when: not (disabled_roles.zabbix_agent | default(false)) }
     # - { role: rsyslog,        tags: [rsyslog],                  when: not (disabled_roles.rsyslog | default(false)) }
     # - { role: custom_files,   tags: [custom_files,vault_auth],          when: not (disabled_roles.custom_files | default(false)) }

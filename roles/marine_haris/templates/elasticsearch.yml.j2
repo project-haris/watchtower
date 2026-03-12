@@ -6,7 +6,7 @@ path.data: /var/lib/elasticsearch
 path.logs: /var/log/elasticsearch
 
 # Bind to localhost for security (Pi is edge device)
-network.host: localhost
+network.host: {{ elastic_network_host }}
 http.port: 9200
 
 # --- Security Configuration ---
