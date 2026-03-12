@@ -112,7 +112,7 @@ vars_common_all_admin_users:
 
 # soft_yum
 vars_common_all_packages_yum:
-  - plocate
+  - mlocate
   - tree
   - tcpdump
   - tar
