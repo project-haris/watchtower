@@ -9,7 +9,7 @@
 shell.nix
 .history/
 .ansible
- 
+opencode.json
 # Common credential files
 **/credentials.json
 **/client_secrets.json
