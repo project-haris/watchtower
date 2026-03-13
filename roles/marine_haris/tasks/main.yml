@@ -2,6 +2,10 @@
   include_tasks: system_prep.yml
   tags: [setup, system]
 
+- name: Configure Firewall
+  include_tasks: firewall.yml
+  tags: [firewall]
+
 - name: Install Signal K
   include_tasks: signal_k.yml
   tags: [signalk]

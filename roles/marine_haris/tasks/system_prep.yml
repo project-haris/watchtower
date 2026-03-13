@@ -10,6 +10,7 @@
       - apt-transport-https
       - gnupg
       - ifupdown
+      - firewalld
     state: present
     update_cache: yes
 
