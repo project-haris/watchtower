@@ -34,24 +34,3 @@ tailscale_authkey: ""
 tailscale_args: ""
 tailscale_tags: []
 tailscale_up_skip: false
-
-# Firewalld Settings
-haris_firewalld_default_zone: "drop"
-haris_firewalld_tailscale_zone: "tailscale"
-
-haris_firewalld_zones:
-  - name: "{{ haris_firewalld_tailscale_zone }}"
-    target: ACCEPT
-    interfaces:
-      - tailscale0
-    services:
-      - ssh
-    ports:
-      - port: "{{ signalk_port }}"
-        protocol: tcp
-      - port: "{{ kibana_port }}"
-        protocol: tcp
-      - port: 9200
-        protocol: tcp
-
-haris_firewalld_rules: []

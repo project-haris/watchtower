@@ -7,7 +7,6 @@ This role automates the deployment and configuration of the **Marine_Haris** edg
 The role handles:
 - **System Preparation**: User creation, system dependencies, and CAN bus interface setup.
 - **Tailscale VPN**: Secure mesh VPN connectivity using Tailscale (WireGuard-based).
-- **Firewalld**: Fail-closed firewall configuration with trusted Tailscale zone.
 - **Signal K Server**: Installation and configuration of the Signal K data server for NMEA 2000/0183 ingestion.
 - **ELK Stack**: Deployment of Elasticsearch, Logstash, and Kibana for local data storage and visualization.
 - **Application Integration**: Deployment of the custom `harisd` data aggregator and Filebeat for log shipping.
@@ -27,7 +26,6 @@ The role handles:
 
 The role is organized into logical task files:
 - `system_prep.yml`: Prepares the OS, installs drivers (CAN utils, firewalld), and creates the `haris` user.
-- `firewall.yml`: Configures firewalld with a trusted Tailscale zone and fail-closed policy.
 - `signal_k.yml`: Installs NodeJS dependencies and Signal K server via NPM.
 - `elk_stack.yml`: Installs the Elastic repository and deploys the ELK components.
 - `haris_integration.yml`: Deploys the custom Python scripts and configures system services.
@@ -63,13 +61,6 @@ Variables are defined in `defaults/main.yml`. You **must** override the identifi
 | `tailscale_tags` | `[]` | Tags to apply to the node. |
 | `tailscale_up_skip` | `false` | Skip Tailscale authentication (for testing). |
 
-### Firewall Configuration
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `haris_firewalld_default_zone` | `"drop"` | Default firewalld zone (fail-closed). |
-| `haris_firewalld_tailscale_zone` | `"tailscale"` | Trusted zone for Tailscale interface. |
-
 ### Signal K Configuration
 
 | Variable | Default | Description |
@@ -90,7 +81,6 @@ Variables are defined in `defaults/main.yml`. You **must** override the identifi
 ## Dependencies
 
 This role depends on:
-- `firewalld` role - Configures the host firewall
 - `tailscale` role - Sets up VPN connectivity
 
 ## Example Playbook

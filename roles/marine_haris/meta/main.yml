@@ -20,7 +20,5 @@ galaxy_info:
     - signalk
 
 dependencies:
-  - name: firewalld
-    src: roles/firewalld
   - name: tailscale
     src: roles/tailscale
