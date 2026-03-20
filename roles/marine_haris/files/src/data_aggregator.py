@@ -3,10 +3,10 @@
 
 #!/usr/bin/env python3
 """
-Data Aggregator for Marine_Haris
+Data Aggregator for Project Haris
 
 Consolidates fragmented, high-frequency data from NMEA 2000 and NMEA 0183 streams
-into a unified 'VesselState' object suitable for logging and transmission to the MSOC.
+into a unified 'VesselState' object suitable for logging and transmission to the M-SOC.
 """
 
 import time
@@ -252,14 +252,14 @@ if __name__ == "__main__":
 ### **Integration Strategy**
 
 # 1.  **Thread Safety**: This script uses a `threading.Lock` to ensure that data from different sensors (which might arrive in different threads) doesn't corrupt the state.
-# 2.  **Periodic Snapshots**: Instead of flooding your database or the MSOC with thousands of messages per second, the aggregator emits a clean, unified snapshot at a fixed interval (e.g., every 10 seconds).
+# 2.  **Periodic Snapshots**: Instead of flooding your database or the M-SOC with thousands of messages per second, the aggregator emits a clean, unified snapshot at a fixed interval (e.g., every 10 seconds).
 # 3.  **Usage in `harisd`**:
 #     ```python
 #     # In your main service script
 #     def on_state_update(state):
 #         # 1. Save to local SQLite/InfluxDB
 #         db.save(state.to_dict())
-#         # 2. Queue for transmission to MSOC
+#         # 2. Queue for transmission to M-SOC
 #         transmission_queue.put(state.to_json())
 
 #     aggregator = DataAggregator(vessel_id="VESSEL-001", callback=on_state_update)

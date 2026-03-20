@@ -1,6 +1,6 @@
 galaxy_info:
-  author: MSOC Engineering Team
-  description: Marine_Haris edge computing stack for maritime security
+  author: M-SOC Engineering Team
+  description: Project Haris edge computing stack for maritime security
   license: MIT
   min_ansible_version: "2.10"
   platforms:

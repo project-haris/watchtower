@@ -52,7 +52,7 @@
     state: present
     create: yes
   loop:
-    - "# --- Marine Haris PiCAN Config ---"
+    - "# --- Project Haris PiCAN Config ---"
     - "dtparam=spi=on"
     # The line below assumes a standard PiCAN-M (MCP2515). 
     - "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25"

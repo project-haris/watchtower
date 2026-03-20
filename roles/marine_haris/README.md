@@ -1,8 +1,8 @@
-# Ansible Role: Marine_Haris
+# Ansible Role: Project Haris
 
 ## Description
 
-This role automates the deployment and configuration of the **Marine_Haris** edge computing stack on Raspberry Pi devices. It transforms a vanilla Raspberry Pi OS into a fully functional maritime security data node, ready for integration with a Maritime Security Operations Center (MSOC).
+This role automates the deployment and configuration of the **Project Haris** edge computing stack on Raspberry Pi devices. It transforms a vanilla Raspberry Pi OS into a fully functional maritime security data node, ready for integration with a Maritime Security Operations Center (M-SOC).
 
 The role handles:
 - **System Preparation**: User creation, system dependencies, and CAN bus interface setup.
@@ -88,7 +88,7 @@ This role depends on:
 **`site.yml`**
 ```yaml
 ---
-- name: Deploy Marine Haris Stack
+- name: Deploy Project Haris Stack
   hosts: vessels
   become: yes
   roles:
@@ -178,4 +178,4 @@ MIT
 
 ## Author Information
 
-Created by the Maritime Security Operations Center (MSOC) Engineering Team.
+Created by the Maritime Security Operations Center (M-SOC) Engineering Team.

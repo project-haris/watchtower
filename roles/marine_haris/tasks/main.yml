@@ -10,6 +10,6 @@
   include_tasks: elk_stack.yml
   tags: [elk]
 
-- name: Deploy Marine Haris Integration (Parsers & Services)
+- name: Deploy Project Haris Integration (Parsers & Services)
   include_tasks: haris_integration.yml
   tags: [haris, integration]
