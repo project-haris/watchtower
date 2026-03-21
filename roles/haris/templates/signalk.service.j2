@@ -10,7 +10,7 @@ Group={{ haris_group }}
 WorkingDirectory={{ haris_home }}
 # Using node directly to run the global package
 # Note: NPM global binaries are usually in /usr/local/bin or /usr/bin
-ExecStart=/usr/bin/signalk-server
+ExecStart=/usr/bin/signalk-server --port {{ haris_signalk_port }}
 Restart=on-failure
 RestartSec=10
 

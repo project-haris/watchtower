@@ -1,5 +1,19 @@
 server.host: "{{ kibana_server_host }}"
 server.port: {{ kibana_port }}
+{% if elasticsearch_security_enabled | bool %}
+elasticsearch.hosts: ["http://localhost:9200"]
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "{{ kibana_system_password }}"
+{% endif %}
+{% if kibana_encrypted_saved_objects_encryption_key | default('') | length > 0 %}
+xpack.encryptedSavedObjects.encryptionKey: "{{ kibana_encrypted_saved_objects_encryption_key }}"
+{% endif %}
+{% if kibana_security_encryption_key | default('') | length > 0 %}
+xpack.security.encryptionKey: "{{ kibana_security_encryption_key }}"
+{% endif %}
+{% if kibana_reporting_encryption_key | default('') | length > 0 %}
+xpack.reporting.encryptionKey: "{{ kibana_reporting_encryption_key }}"
+{% endif %}
 
 logging:
   appenders:

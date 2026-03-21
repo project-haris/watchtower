@@ -1,14 +1,11 @@
 - name: Install required system packages
   apt:
     name:
-      - openjdk-21-jre-headless
       - nodejs
       - npm
       - python3
       - python3-pip
       - can-utils
-      - apt-transport-https
-      - gnupg
       - ifupdown
       - firewalld
     state: present

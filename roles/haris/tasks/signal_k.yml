@@ -1,7 +1,7 @@
 - name: Install Signal K Server globally
   npm:
     name: signalk-server
-    version: "{{ signalk_version }}"
+    version: "{{ haris_signalk_version }}"
     global: yes
     state: present
 

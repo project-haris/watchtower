@@ -1,0 +1,25 @@
+# General Settings
+haris_vessel_id: "VESSEL-001"
+haris_vessel_name: "Default Vessel"
+haris_timezone: "UTC"
+
+# User/Group
+haris_user: "haris"
+haris_group: "haris"
+haris_home: "/opt/haris"
+
+# NMEA Settings
+haris_nmea2000_interface: "can0"
+haris_nmea0183_port: "/dev/ttyS0"
+haris_nmea0183_baud: 4800
+
+# Signal K Settings
+haris_signalk_version: "2.6.0"
+haris_signalk_port: 3000
+haris_signalk_admin_password: "change_me_password"
+
+# Tailscale VPN Settings
+haris_tailscale_authkey: ""
+haris_tailscale_args: ""
+haris_tailscale_tags: []
+haris_tailscale_up_skip: false

@@ -6,4 +6,12 @@ kibana_port: 5601
 logstash_conf_dir: "/etc/logstash/conf.d"
 elasticsearch_cluster_name: "elk-cluster"
 elasticsearch_node_name: "node-01"
-elasticsearch_security_enabled: false
+elasticsearch_security_enabled: true
+elasticsearch_bootstrap_password: "{{ elasticsearch_elastic_password }}"
+elasticsearch_elastic_password: ""
+kibana_system_password: ""
+logstash_internal_username: "logstash_internal"
+logstash_internal_password: ""
+kibana_encrypted_saved_objects_encryption_key: ""
+kibana_security_encryption_key: ""
+kibana_reporting_encryption_key: ""

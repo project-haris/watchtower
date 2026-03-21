@@ -10,7 +10,7 @@
 
 - name: Deploy Python Data Collector
   copy:
-    src: "src/data_aggregator.py" # Assuming you store your python files in roles/marine_haris/files/src/
+    src: "src/data_aggregator.py" # Assuming you store your python files in roles/haris/files/src/
     dest: "{{ haris_home }}/src/data_aggregator.py"
     owner: "{{ haris_user }}"
     mode: '0755'
@@ -21,17 +21,6 @@
     dest: /etc/systemd/system/harisd.service
   notify: Restart Haris Service
 
-- name: Install Filebeat (Lightweight shipper to Logstash)
-  apt:
-    name: filebeat
-    state: present
-
-- name: Configure Filebeat
-  template:
-    src: filebeat.yml.j2
-    dest: /etc/filebeat/filebeat.yml
-  notify: Restart Filebeat
-
 - name: Enable Services
   service:
     name: "{{ item }}"
@@ -39,4 +28,3 @@
     state: started
   loop:
     - harisd
-    - filebeat

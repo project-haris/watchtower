@@ -1,8 +1,0 @@
-filebeat.inputs:
-- type: log
-  paths:
-    - {{ haris_home }}/logs/*.log
-  json.keys_under_root: true
-
-output.logstash:
-  hosts: ["localhost:5044"]

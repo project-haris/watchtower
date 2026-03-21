@@ -22,3 +22,8 @@ galaxy_info:
 dependencies:
   - name: tailscale
     src: roles/tailscale
+    vars:
+      tailscale_authkey: "{{ haris_tailscale_authkey }}"
+      tailscale_args: "{{ haris_tailscale_args }}"
+      tailscale_tags: "{{ haris_tailscale_tags }}"
+      tailscale_up_skip: "{{ haris_tailscale_up_skip }}"

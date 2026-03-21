@@ -11,5 +11,9 @@ output {
   elasticsearch {
     hosts => ["http://localhost:9200"]
     index => "logstash-%{+YYYY.MM.dd}"
+{% if elasticsearch_security_enabled | bool %}
+    user => "{{ logstash_internal_username }}"
+    password => "{{ logstash_internal_password }}"
+{% endif %}
   }
 }

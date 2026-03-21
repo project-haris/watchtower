@@ -79,8 +79,7 @@ vars_common_all_users_deleted:
 vars_common_all_root_user:
   - name: "root"
     homedir: "/root"
-    ssh_authorized_keys:
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+    ssh_authorized_keys: "{{ vars_common_keys_root }}"
 vars_common_all_admin_users:
   - name: "ahmed"
     uid: "10001"
@@ -93,21 +92,17 @@ vars_common_all_admin_users:
           66633431393262636530646361393164376430333838656435653631653233323730386532333663
           6439366131383438650a653766366434346335353639363666653133383437333763353864626363
           3662
-    ssh_authorized_keys:
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+    ssh_authorized_keys: "{{ vars_common_keys_ahmed }}"
   - name: "ansible"
     uid: "10002"
     primary_group: "admin"
     homedir: "/home/ansible"
-    ssh_authorized_keys:
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHajWISUmQ+cV/ahx54Bnd05zOK+h9pXQKzWaj2JtkuX ansible@haris-gateway"
+    ssh_authorized_keys: "{{ vars_common_keys_ansible }}"
   - name: "admin"
     uid: "10015"
     primary_group: "admin"
     homedir: "/home/admin"
-    ssh_authorized_keys:
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDmIu+fBFdea89OpKoRA8J1wf/5XKs2NCoYBze0btV7l oversight"
+    ssh_authorized_keys: "{{ vars_common_keys_admin }}"
     sudo: "%admin ALL=(ALL) NOPASSWD: ALL"
 
 # soft_yum

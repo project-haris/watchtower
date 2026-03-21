@@ -9,7 +9,8 @@
     - ../../vars_common_all.yml
     - ../../vars_disabled_roles.yml
     - ../../vars_common_keys.yml
-
+    - ../../vars_common_secrets.yml
+    
   roles:
     - { role: sysctl, tags: [sysctl], when: not (disabled_roles.sysctl | default(false))}
     - { role: users_groups, tags: [users_groups], when: not (disabled_roles.users_groups | default(false)) }
@@ -20,9 +21,8 @@
     - { role: tailscale, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
     - { role: cron, tags: [cron], when: not (disabled_roles.cron | default(false)) }
     - { role: chrony, tags: [chrony], when: not (disabled_roles.chrony | default(false)) }
-    # - { role: zabbix_agent,   tags: [zabbix_agent],             when: not (disabled_roles.zabbix_agent | default(false)) }
+    - { role: elk_stack, tags: [elk_stack], when: (haris_install_elk_stack | default(false)) and not (disabled_roles.elk_stack | default(false)) }
     # - { role: rsyslog,        tags: [rsyslog],                  when: not (disabled_roles.rsyslog | default(false)) }
     # - { role: custom_files,   tags: [custom_files,vault_auth],          when: not (disabled_roles.custom_files | default(false)) }
     # - { role: networkmanager,        tags: [networkmanager] }
     # - { role: pam,            tags: [pam,ad_auth],                          when: not (disabled_roles.pam | default(false)) }
-

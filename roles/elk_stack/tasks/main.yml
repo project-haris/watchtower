@@ -4,6 +4,18 @@
     state: directory
     mode: '0755'
 
+- name: Validate ELK security secrets
+  ansible.builtin.assert:
+    that:
+      - elasticsearch_elastic_password | length > 0
+      - kibana_system_password | length > 0
+      - logstash_internal_password | length > 0
+      - kibana_encrypted_saved_objects_encryption_key | length > 0
+      - kibana_security_encryption_key | length > 0
+      - kibana_reporting_encryption_key | length > 0
+    fail_msg: "When elasticsearch_security_enabled is true, set the Elastic, Kibana, Logstash, and Kibana encryption secrets."
+  when: elasticsearch_security_enabled | bool
+
 - name: Download Elastic GPG key
   get_url:
     url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
@@ -47,6 +59,14 @@
     dest: /etc/elasticsearch/elasticsearch.yml
   notify: Restart Elasticsearch
 
+- name: Set Elasticsearch bootstrap password in keystore
+  ansible.builtin.command:
+    cmd: /usr/share/elasticsearch/bin/elasticsearch-keystore add -f -x bootstrap.password
+    stdin: "{{ elasticsearch_bootstrap_password }}"
+  no_log: true
+  notify: Restart Elasticsearch
+  when: elasticsearch_security_enabled | bool
+
 - name: Install Logstash
   apt:
     name: logstash
@@ -68,6 +88,91 @@
     src: kibana.yml.j2
     dest: /etc/kibana/kibana.yml
   notify: Restart Kibana
+
+- name: Flush handlers before configuring ELK security
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Elasticsearch is reachable
+  ansible.builtin.uri:
+    url: http://localhost:9200
+    method: GET
+    status_code:
+      - 200
+      - 401
+  register: elasticsearch_health
+  retries: 30
+  delay: 5
+  until: elasticsearch_health.status in [200, 401]
+  when: elasticsearch_security_enabled | bool
+
+- name: Set elastic user password
+  ansible.builtin.uri:
+    url: http://localhost:9200/_security/user/elastic/_password
+    method: POST
+    user: elastic
+    password: "{{ elasticsearch_bootstrap_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      password: "{{ elasticsearch_elastic_password }}"
+    status_code: 200
+  no_log: true
+  when: elasticsearch_security_enabled | bool
+
+- name: Set kibana_system password
+  ansible.builtin.uri:
+    url: http://localhost:9200/_security/user/kibana_system/_password
+    method: POST
+    user: elastic
+    password: "{{ elasticsearch_elastic_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      password: "{{ kibana_system_password }}"
+    status_code: 200
+  no_log: true
+  when: elasticsearch_security_enabled | bool
+
+- name: Create Logstash writer role
+  ansible.builtin.uri:
+    url: http://localhost:9200/_security/role/logstash_writer
+    method: POST
+    user: elastic
+    password: "{{ elasticsearch_elastic_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      cluster:
+        - manage_index_templates
+        - monitor
+      indices:
+        - names:
+            - "logstash-*"
+          privileges:
+            - write
+            - create
+            - create_index
+            - auto_configure
+    status_code: 200
+  no_log: true
+  when: elasticsearch_security_enabled | bool
+
+- name: Create Logstash internal user
+  ansible.builtin.uri:
+    url: "http://localhost:9200/_security/user/{{ logstash_internal_username }}"
+    method: POST
+    user: elastic
+    password: "{{ elasticsearch_elastic_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      password: "{{ logstash_internal_password }}"
+      roles:
+        - logstash_writer
+      full_name: "Internal Logstash writer"
+    status_code: 200
+  no_log: true
+  when: elasticsearch_security_enabled | bool
 
 - name: Start and Enable ELK Services
   service:

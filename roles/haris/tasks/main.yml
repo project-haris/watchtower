@@ -6,10 +6,6 @@
   include_tasks: signal_k.yml
   tags: [signalk]
 
-- name: Install ELK Stack
-  include_tasks: elk_stack.yml
-  tags: [elk]
-
 - name: Deploy Project Haris Integration (Parsers & Services)
   include_tasks: haris_integration.yml
   tags: [haris, integration]
