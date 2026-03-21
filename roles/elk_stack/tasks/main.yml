@@ -1,9 +1,3 @@
-- name: Ensure keyrings directory exists
-  file:
-    path: /usr/share/keyrings
-    state: directory
-    mode: '0755'
-
 - name: Validate ELK security secrets
   ansible.builtin.assert:
     that:
@@ -16,28 +10,63 @@
     fail_msg: "When elasticsearch_security_enabled is true, set the Elastic, Kibana, Logstash, and Kibana encryption secrets."
   when: elasticsearch_security_enabled | bool
 
-- name: Download Elastic GPG key
-  get_url:
-    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
-    dest: /usr/share/keyrings/elastic-keyring.asc
-    mode: '0644'
+- name: Validate supported ELK platforms
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family in ['Debian', 'RedHat']
+    fail_msg: "elk_stack currently supports only Debian/Ubuntu and Rocky/RedHat family hosts."
 
-- name: Dearmor Elastic GPG key (Convert to binary format)
-  command: gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg /usr/share/keyrings/elastic-keyring.asc
-  args:
-    creates: /usr/share/keyrings/elastic-archive-keyring.gpg
+- name: Configure Elastic apt repository
+  when: ansible_os_family == 'Debian'
+  block:
+    - name: Ensure keyrings directory exists
+      ansible.builtin.file:
+        path: /usr/share/keyrings
+        state: directory
+        mode: '0755'
 
-- name: Add Elastic repository (Signed-by method)
-  apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/{{ elasticsearch_version }}/apt stable main"
-    state: present
-    filename: elastic-{{ elasticsearch_version }}
-    update_cache: yes
+    - name: Download Elastic GPG key
+      ansible.builtin.get_url:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        dest: /usr/share/keyrings/elastic-keyring.asc
+        mode: '0644'
 
-- name: Install Elasticsearch
-  apt:
+    - name: Dearmor Elastic GPG key
+      ansible.builtin.command:
+        cmd: gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg /usr/share/keyrings/elastic-keyring.asc
+      args:
+        creates: /usr/share/keyrings/elastic-archive-keyring.gpg
+
+    - name: Add Elastic apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/{{ elasticsearch_version }}/apt stable main"
+        state: present
+        filename: elastic-{{ elasticsearch_version }}
+        update_cache: true
+
+- name: Configure Elastic yum repository
+  when: ansible_os_family == 'RedHat'
+  block:
+    - name: Add Elastic yum repository
+      ansible.builtin.yum_repository:
+        name: "elastic-{{ elasticsearch_version }}"
+        description: "Elastic repository for {{ elasticsearch_version }}"
+        baseurl: "https://artifacts.elastic.co/packages/{{ elasticsearch_version }}/yum"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+
+- name: Install Elasticsearch on Debian
+  ansible.builtin.apt:
     name: elasticsearch
     state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install Elasticsearch on RedHat
+  ansible.builtin.yum:
+    name: elasticsearch
+    state: present
+  when: ansible_os_family == 'RedHat'
 
 - name: Configure Elasticsearch JVM Heap
   lineinfile:
@@ -67,10 +96,17 @@
   notify: Restart Elasticsearch
   when: elasticsearch_security_enabled | bool
 
-- name: Install Logstash
-  apt:
+- name: Install Logstash on Debian
+  ansible.builtin.apt:
     name: logstash
     state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install Logstash on RedHat
+  ansible.builtin.yum:
+    name: logstash
+    state: present
+  when: ansible_os_family == 'RedHat'
 
 - name: Deploy Logstash Pipeline Config
   template:
@@ -78,10 +114,17 @@
     dest: "{{ logstash_conf_dir }}/pipeline.conf"
   notify: Restart Logstash
 
-- name: Install Kibana
-  apt:
+- name: Install Kibana on Debian
+  ansible.builtin.apt:
     name: kibana
     state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install Kibana on RedHat
+  ansible.builtin.yum:
+    name: kibana
+    state: present
+  when: ansible_os_family == 'RedHat'
 
 - name: Deploy Kibana Config
   template:

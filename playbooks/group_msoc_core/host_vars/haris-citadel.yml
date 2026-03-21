@@ -1,9 +1,27 @@
 haris_install_elk_stack: true
 elasticsearch_cluster_name: "haris-cluster"
 elasticsearch_node_name: "haris-citadel"
-firewalld_rules:
-  - zone: public
-    port: 5045/tcp
-    permanent: true
-    immediate: true
-    state: enabled
+# firewalld_rules:
+#   - zone: public
+#     port: 5045/tcp
+#     permanent: true
+#     immediate: true
+#     state: enabled
+
+firewalld_config:
+  DefaultZone: drop
+
+firewalld_zones:
+  - name: tailscale
+    target: ACCEPT
+    interface:
+      - name: tailscale0
+    service:
+      - name: ssh
+    port:
+      - port: "{{ kibana_port }}"
+        protocol: tcp
+      - port: 9200
+        protocol: tcp
+      - port: "{{ logstash_signalk_port }}"
+        protocol: tcp

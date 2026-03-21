@@ -2,12 +2,12 @@
 
 ## Description
 
-This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debian-based systems. It handles repository setup, package installation, and configuration for all three components.
+This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debian/Ubuntu and Rocky/RedHat family systems. It handles repository setup, package installation, and configuration for all three components.
 
 ## Requirements
 
 ### Platform
-- **OS**: Debian/Ubuntu (uses apt)
+- **OS**: Debian/Ubuntu and Rocky/RedHat family
 - **Architecture**: x86_64 or aarch64
 - **Hardware**: 4GB+ RAM recommended (8GB+ for production)
 
@@ -33,7 +33,7 @@ This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debi
 | `logstash_conf_dir` | `"/etc/logstash/conf.d"` | Logstash pipeline config directory |
 | `elasticsearch_cluster_name` | `"elk-cluster"` | Elasticsearch cluster name |
 | `elasticsearch_node_name` | `"node-01"` | Elasticsearch node name |
-| `elasticsearch_security_enabled` | `false` | Enable X-Pack security |
+| `elasticsearch_security_enabled` | `true` | Enable X-Pack security |
 
 ## Dependencies
 
@@ -93,8 +93,8 @@ kibana_port: 5601
 
 ## Security Notes
 
-- By default, X-Pack security is disabled for simplicity
-- For production, set `elasticsearch_security_enabled: true` and configure SSL/TLS
+- X-Pack security is enabled by default
+- For production, also configure SSL/TLS
 - Override default passwords and restrict network bindings as needed
 
 ## License

@@ -14,7 +14,7 @@ users_deleted: "{{ vars_common_all_users_deleted }}"
 tailscale_authkey: "{{ vars_common_all_tailscale_auth_key }}"
 tailscale_args: "--ssh"
 
-signalk_port: 3000
+haris_signalk_port: 3000
 kibana_port: 5601
 haris_soc_forward_enabled: true
 haris_soc_log_host: "haris-citadel"
@@ -31,7 +31,7 @@ firewalld_zones:
     service:
       - name: ssh
     port:
-      - port: "{{ signalk_port }}"
+      - port: "{{ haris_signalk_port }}"
         protocol: tcp
       - port: "{{ kibana_port }}"
         protocol: tcp

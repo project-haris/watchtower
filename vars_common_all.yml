@@ -136,6 +136,7 @@ vars_common_all_packages_apt:
   - git
   - ansible-core
   - dnsutils
+  - python3-apt
 
 # firewalld zones
 # vars_common_all_firewalld_zones:
