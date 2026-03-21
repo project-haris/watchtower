@@ -1,0 +1,9 @@
+haris_install_elk_stack: true
+elasticsearch_cluster_name: "haris-cluster"
+elasticsearch_node_name: "haris-citadel"
+firewalld_rules:
+  - zone: public
+    port: 5045/tcp
+    permanent: true
+    immediate: true
+    state: enabled
