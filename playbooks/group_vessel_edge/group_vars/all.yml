@@ -16,6 +16,9 @@ tailscale_args: "--ssh"
 
 signalk_port: 3000
 kibana_port: 5601
+haris_soc_forward_enabled: true
+haris_soc_log_host: "haris-citadel"
+haris_soc_log_port: 5045
 
 firewalld_config:
   DefaultZone: drop

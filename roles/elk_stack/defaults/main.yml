@@ -4,6 +4,8 @@ elastic_network_host: "0.0.0.0"
 kibana_server_host: "0.0.0.0"
 kibana_port: 5601
 logstash_conf_dir: "/etc/logstash/conf.d"
+logstash_beats_port: 5044
+logstash_signalk_port: 5045
 elasticsearch_cluster_name: "elk-cluster"
 elasticsearch_node_name: "node-01"
 elasticsearch_security_enabled: true

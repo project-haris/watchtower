@@ -17,6 +17,11 @@ haris_nmea0183_baud: 4800
 haris_signalk_version: "2.6.0"
 haris_signalk_port: 3000
 haris_signalk_admin_password: "change_me_password"
+haris_signalk_host: "127.0.0.1"
+haris_snapshot_interval: 10
+haris_soc_forward_enabled: false
+haris_soc_log_host: ""
+haris_soc_log_port: 5045
 
 # Tailscale VPN Settings
 haris_tailscale_authkey: ""

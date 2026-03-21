@@ -6,6 +6,14 @@ After=network.target
 Type=simple
 User={{ haris_user }}
 WorkingDirectory={{ haris_home }}
+Environment="HARIS_VESSEL_ID={{ haris_vessel_id }}"
+Environment="HARIS_VESSEL_NAME={{ haris_vessel_name }}"
+Environment="HARIS_SIGNALK_API_URL=http://{{ haris_signalk_host }}:{{ haris_signalk_port }}/signalk/v1/api/vessels/self"
+Environment="HARIS_SNAPSHOT_INTERVAL={{ haris_snapshot_interval }}"
+Environment="HARIS_LOG_PATH={{ haris_home }}/logs/signalk_snapshots.jsonl"
+Environment="HARIS_SOC_FORWARD_ENABLED={{ 'true' if haris_soc_forward_enabled else 'false' }}"
+Environment="HARIS_SOC_LOG_HOST={{ haris_soc_log_host }}"
+Environment="HARIS_SOC_LOG_PORT={{ haris_soc_log_port }}"
 ExecStart=/usr/bin/python3 {{ haris_home }}/src/data_aggregator.py
 Restart=on-failure
 

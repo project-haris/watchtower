@@ -9,6 +9,7 @@
     - ../../vars_common_all.yml
     - ../../vars_disabled_roles.yml
     - ../../vars_common_keys.yml
+    - ../../vars_common_secrets.yml
 
   roles:
     - { role: sysctl, tags: [sysctl], when: not (disabled_roles.sysctl | default(false))}

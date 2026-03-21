@@ -1,16 +1,29 @@
 input {
   beats {
-    port => 5044
+    port => {{ logstash_beats_port }}
+  }
+  tcp {
+    port => {{ logstash_signalk_port }}
+    codec => json_lines
   }
 }
 
 filter {
+  if [source] == "haris_signalk" {
+    mutate {
+      add_field => { "[@metadata][target_index]" => "haris-signalk-%{+YYYY.MM.dd}" }
+    }
+  } else {
+    mutate {
+      add_field => { "[@metadata][target_index]" => "logstash-%{+YYYY.MM.dd}" }
+    }
+  }
 }
 
 output {
   elasticsearch {
     hosts => ["http://localhost:9200"]
-    index => "logstash-%{+YYYY.MM.dd}"
+    index => "%{[@metadata][target_index]}"
 {% if elasticsearch_security_enabled | bool %}
     user => "{{ logstash_internal_username }}"
     password => "{{ logstash_internal_password }}"

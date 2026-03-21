@@ -1,3 +1,0 @@
-haris_install_elk_stack: true
-elasticsearch_cluster_name: "haris-cluster"
-elasticsearch_node_name: "haris_citadel"
