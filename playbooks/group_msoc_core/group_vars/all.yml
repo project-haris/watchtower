@@ -23,14 +23,28 @@ users_deleted: "{{ vars_common_all_users_deleted }}"
 
 tailscale_authkey: "{{ vars_common_all_tailscale_auth_key }}"
 tailscale_args: "--ssh"
+chrony_timezone: "Europe/Tallinn"
 kibana_port: 5601
-repository_version: "7.0"
+zabbix_repository_version: "7.0"
 agent_variant: 2
 agent_major_version: "7.0"
 agent_apply_firewalld_rule: false
-agent_param_server: "haris-citadel"
-agent_param_serveractive: "haris-citadel"
+agent_param_server: "{{vars_common_all_zabbix_server}}"
+agent_param_serveractive: "{{vars_common_all_zabbix_server}}"
 agent_param_hostname: "{{ inventory_hostname }}"
+firewalld_config:
+  DefaultZone: drop
+
+firewalld_zones:
+  - name: tailscale
+    target: ACCEPT
+    interface:
+      - name: tailscale0
+    service:
+      - name: ssh
+    port:
+      - port: 10050
+        protocol: tcp
 
 # cron
 cron_service_enabled: yes

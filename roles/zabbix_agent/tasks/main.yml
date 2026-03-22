@@ -1,0 +1,138 @@
+-
+  name: Validate supported Zabbix agent platform
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family in ['RedHat', 'Debian']
+    fail_msg: "zabbix_agent currently supports RedHat/Rocky family and Debian/Raspbian family hosts only."
+
+- name: Set Zabbix agent service facts
+  ansible.builtin.set_fact:
+    zabbix_agent_is_agent2: "{{ zabbix_agent_variant == '2' }}"
+    zabbix_agent_service_name: "{{ 'zabbix-agent2' if zabbix_agent_variant == '2' else 'zabbix-agent' }}"
+    zabbix_agent_package_name: "{{ 'zabbix-agent2' if zabbix_agent_variant == '2' else 'zabbix-agent' }}"
+    zabbix_agent_conf_path: "{{ '/etc/zabbix/zabbix_agent2.conf' if zabbix_agent_variant == '2' else '/etc/zabbix/zabbix_agentd.conf' }}"
+    zabbix_agent_logfile: "{{ '/var/log/zabbix/zabbix_agent2.log' if zabbix_agent_variant == '2' else '/var/log/zabbix/zabbix_agentd.log' }}"
+    zabbix_agent_pidfile: "{{ '/run/zabbix/zabbix_agent2.pid' if zabbix_agent_variant == '2' else '/run/zabbix/zabbix_agentd.pid' }}"
+    zabbix_agent_include_glob: "{{ '/etc/zabbix/zabbix_agent2.d/*.conf' if zabbix_agent_variant == '2' else '/etc/zabbix/zabbix_agentd.d/*.conf' }}"
+
+- name: Set Zabbix repository path facts
+  ansible.builtin.set_fact:
+    zabbix_agent_repo_os_redhat: "{{ zabbix_agent_repo_os_redhat_map.get(ansible_distribution, 'rhel') }}"
+    zabbix_agent_repo_major_redhat: "{{ ansible_distribution_major_version | string }}"
+    zabbix_agent_repo_os_debian: "{{ 'raspbian' if ansible_distribution == 'Raspbian' else 'debian' }}"
+    zabbix_agent_repo_arch_debian: "{{ '' if (ansible_architecture == 'x86_64' or ansible_distribution == 'Raspbian') else ('-arm64' if ansible_architecture == 'aarch64' else '') }}"
+  vars:
+    zabbix_agent_repo_os_redhat_map:
+      RedHat: rhel
+      Rocky: rocky
+      AlmaLinux: alma
+      OracleLinux: oracle
+      CentOS: centos
+
+- name: Import Zabbix RPM GPG keys
+  ansible.builtin.rpm_key:
+    key: "{{ item }}"
+    state: present
+  loop: "{{ zabbix_agent_repo_gpg_keys_redhat[zabbix_agent_repo_major_redhat] | default(zabbix_agent_repo_gpg_keys_redhat['10']) }}"
+  when:
+    - ansible_os_family == 'RedHat'
+    - zabbix_agent_repository_state != 'absent'
+  vars:
+    zabbix_agent_repo_gpg_keys_redhat:
+      '8':
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-A14FE591"
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-B5333005"
+      '9':
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-08EFA7DD"
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-B5333005"
+      '10':
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-B5333005"
+
+- name: Configure Zabbix yum repository
+  ansible.builtin.yum_repository:
+    name: "{{ zabbix_agent_repository_name }}"
+    description: "{{ zabbix_agent_repository_description }}"
+    baseurl: "{{ zabbix_agent_repository_url }}/zabbix/{{ zabbix_agent_repo_version }}/{{ zabbix_agent_repo_os_redhat }}/{{ zabbix_agent_repo_major_redhat }}/$basearch/"
+    gpgcheck: true
+    gpgkey: "{{ zabbix_agent_repo_gpg_keys_redhat[zabbix_agent_repo_major_redhat] | default(zabbix_agent_repo_gpg_keys_redhat['10']) }}"
+    priority: "{{ zabbix_agent_repository_priority }}"
+    enabled: true
+    sslverify: true
+    state: "{{ zabbix_agent_repository_state }}"
+  when: ansible_os_family == 'RedHat'
+  vars:
+    zabbix_agent_repo_gpg_keys_redhat:
+      '8':
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-A14FE591"
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-B5333005"
+      '9':
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-08EFA7DD"
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-B5333005"
+      '10':
+        - "{{ zabbix_agent_repository_url }}/RPM-GPG-KEY-ZABBIX-B5333005"
+
+- name: Install deb822 support dependency
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present
+    update_cache: true
+  when:
+    - ansible_os_family == 'Debian'
+    - zabbix_agent_repository_state != 'absent'
+
+- name: Configure Zabbix apt repository
+  ansible.builtin.deb822_repository:
+    name: "{{ zabbix_agent_repository_name }}"
+    state: "{{ zabbix_agent_repository_state }}"
+    types:
+      - deb
+      - deb-src
+    uris: "{{ zabbix_agent_repository_url }}/zabbix/{{ zabbix_agent_repo_version }}/{{ zabbix_agent_repo_os_debian }}{{ zabbix_agent_repo_arch_debian }}"
+    suites: "{{ ansible_distribution_release }}"
+    components:
+      - main
+    architectures: "{{ 'arm64' if ansible_architecture == 'aarch64' else omit }}"
+    signed_by: "{{ zabbix_agent_repository_url }}/zabbix-official-repo.key"
+  when: ansible_os_family == 'Debian'
+
+- name: Refresh apt cache after Zabbix repo changes
+  ansible.builtin.apt:
+    update_cache: true
+  when: ansible_os_family == 'Debian'
+
+- name: Install Zabbix agent packages on RedHat
+  ansible.builtin.yum:
+    name: "{{ ['zabbix-get', 'zabbix-sender', zabbix_agent_package_name] + zabbix_agent_extra_packages }}"
+    state: "{{ zabbix_agent_package_state }}"
+    update_cache: true
+    disablerepo: "{{ zabbix_agent_repository_disable }}"
+  when: ansible_os_family == 'RedHat'
+
+- name: Install Zabbix agent packages on Debian
+  ansible.builtin.apt:
+    name: "{{ ['zabbix-get', 'zabbix-sender', zabbix_agent_package_name] + zabbix_agent_extra_packages }}"
+    state: "{{ zabbix_agent_package_state }}"
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure Zabbix include directory exists
+  ansible.builtin.file:
+    path: "{{ zabbix_agent_include_glob | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Zabbix agent configuration
+  ansible.builtin.template:
+    src: zabbix_agent.conf.j2
+    dest: "{{ zabbix_agent_conf_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart zabbix-agent service
+
+- name: Enable and start Zabbix agent service
+  ansible.builtin.service:
+    name: "{{ zabbix_agent_service_name }}"
+    enabled: true
+    state: started

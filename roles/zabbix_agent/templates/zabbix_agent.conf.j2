@@ -1,0 +1,18 @@
+PidFile={{ zabbix_agent_pidfile }}
+LogType={{ zabbix_agent_logtype }}
+LogFile={{ zabbix_agent_logfile }}
+LogFileSize={{ zabbix_agent_logfilesize }}
+Server={{ zabbix_agent_server }}
+ServerActive={{ zabbix_agent_serveractive }}
+Hostname={{ zabbix_agent_hostname }}
+ListenPort={{ zabbix_agent_listenport }}
+{% if zabbix_agent_listenip %}
+ListenIP={{ zabbix_agent_listenip }}
+{% endif %}
+{% if zabbix_agent_debuglevel is not sameas omit %}
+DebugLevel={{ zabbix_agent_debuglevel }}
+{% endif %}
+{% if zabbix_agent_timeout is not sameas omit %}
+Timeout={{ zabbix_agent_timeout }}
+{% endif %}
+Include={{ zabbix_agent_include_glob }}

@@ -1,0 +1,20 @@
+zabbix_agent_repo_version: "{{ zabbix_repository_version | default(agent_major_version | default('7.0')) }}"
+zabbix_agent_variant: "{{ agent_variant | default(2) | string }}"
+zabbix_agent_server: "{{ agent_param_server | default('127.0.0.1') }}"
+zabbix_agent_serveractive: "{{ agent_param_serveractive | default('127.0.0.1') }}"
+zabbix_agent_hostname: "{{ agent_param_hostname | default(inventory_hostname) }}"
+zabbix_agent_listenport: "{{ agent_param_listenport | default(10050) }}"
+zabbix_agent_listenip: "{{ agent_param_listenip | default('') }}"
+zabbix_agent_debuglevel: "{{ agent_param_debuglevel | default(omit) }}"
+zabbix_agent_timeout: "{{ agent_param_timeout | default(omit) }}"
+zabbix_agent_logtype: "{{ agent_param_logtype | default('file') }}"
+zabbix_agent_logfilesize: "{{ agent_param_logfilesize | default(0) }}"
+zabbix_agent_package_state: present
+zabbix_agent_repository_state: present
+zabbix_agent_repository_name: zabbix-managed
+zabbix_agent_repository_description: Zabbix repository source (Ansible managed)
+zabbix_agent_repository_url: https://repo.zabbix.com
+zabbix_agent_repository_priority: 98
+zabbix_agent_repository_disable:
+  - epel
+zabbix_agent_extra_packages: []

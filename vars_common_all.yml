@@ -47,7 +47,8 @@ hostname: "{{ inventory_hostname }}"
 # searchdomain: "tailb05740.ts.net"
 # nameservers:
 #   - 100.100.100.100
-
+# zabbix
+vars_common_all_zabbix_server: "127.0.0.1,{{ ansible_host }},{{ hostvars['haris-citadel'].ansible_host }},haris-citadel"
 
 # Tailscale
 # vars_common_all_tailscale_auth_key: !vault |

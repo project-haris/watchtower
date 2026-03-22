@@ -70,6 +70,8 @@
     login_unix_socket: /var/lib/mysql/mysql.sock
     name: "{{ zabbix_server_db_name }}"
     state: present
+    encoding: "{{ zabbix_server_db_encoding }}"
+    collation: "{{ zabbix_server_db_collation }}"
 
 - name: Create Zabbix database user
   community.mysql.mysql_user:
@@ -95,10 +97,68 @@
   register: zabbix_server_schema_check
   no_log: true
 
-- name: Import initial Zabbix schema
-  ansible.builtin.shell: "zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 --socket=/var/lib/mysql/mysql.sock -u{{ zabbix_server_db_user }} -p'{{ zabbix_server_db_password }}' {{ zabbix_server_db_name }}"
-  when: (zabbix_server_schema_check.query_result[0][0].table_count | int) == 0
+- name: Check whether Zabbix users table exists
+  community.mysql.mysql_query:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    login_user: "{{ zabbix_server_db_user }}"
+    login_password: "{{ zabbix_server_db_password }}"
+    query: "SELECT COUNT(*) AS users_table_count FROM information_schema.tables WHERE table_schema='{{ zabbix_server_db_name }}' AND table_name='users';"
+  register: zabbix_server_users_table_check
   no_log: true
+
+- name: Check whether Zabbix users table is initialized
+  community.mysql.mysql_query:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    login_user: "{{ zabbix_server_db_user }}"
+    login_password: "{{ zabbix_server_db_password }}"
+    query: "SELECT COUNT(*) AS users_count FROM {{ zabbix_server_db_name }}.users;"
+  register: zabbix_server_users_count_check
+  when: (zabbix_server_users_table_check.query_result[0][0].users_table_count | int) > 0
+  no_log: true
+
+- name: Reset incomplete Zabbix database
+  community.mysql.mysql_db:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    name: "{{ zabbix_server_db_name }}"
+    state: absent
+  when:
+    - (zabbix_server_schema_check.query_result[0][0].table_count | int) > 0
+    - (zabbix_server_users_table_check.query_result[0][0].users_table_count | int) > 0
+    - (zabbix_server_users_count_check.query_result[0][0].users_count | int) == 0
+
+- name: Recreate Zabbix database after reset
+  community.mysql.mysql_db:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    name: "{{ zabbix_server_db_name }}"
+    state: present
+    encoding: "{{ zabbix_server_db_encoding }}"
+    collation: "{{ zabbix_server_db_collation }}"
+  when:
+    - (zabbix_server_schema_check.query_result[0][0].table_count | int) > 0
+    - (zabbix_server_users_table_check.query_result[0][0].users_table_count | int) > 0
+    - (zabbix_server_users_count_check.query_result[0][0].users_count | int) == 0
+
+- name: Import initial Zabbix schema
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz \
+        | mysql --default-character-set=utf8mb4 \
+            --socket=/var/lib/mysql/mysql.sock \
+            -u{{ zabbix_server_db_user }} \
+            {{ zabbix_server_db_name }}
+    executable: /bin/bash
+  environment:
+    MYSQL_PWD: "{{ zabbix_server_db_password }}"
+  register: zabbix_server_schema_import
+  when: >-
+    (zabbix_server_schema_check.query_result[0][0].table_count | int) == 0
+    or (
+      (zabbix_server_schema_check.query_result[0][0].table_count | int) > 0
+      and (zabbix_server_users_table_check.query_result[0][0].users_table_count | int) > 0
+      and (zabbix_server_users_count_check.query_result[0][0].users_count | int) == 0
+    )
+  changed_when: zabbix_server_schema_import.rc == 0
   notify: Restart zabbix-server
 
 - name: Disable MySQL function creator trust after import
@@ -111,6 +171,7 @@
     path: /etc/zabbix/zabbix_server.conf
     regexp: '^#? DBName='
     line: "DBName={{ zabbix_server_db_name }}"
+    state: present
   notify: Restart zabbix-server
 
 - name: Configure Zabbix server database user
@@ -118,6 +179,7 @@
     path: /etc/zabbix/zabbix_server.conf
     regexp: '^#? DBUser='
     line: "DBUser={{ zabbix_server_db_user }}"
+    state: present
   notify: Restart zabbix-server
 
 - name: Configure Zabbix server database password
@@ -125,18 +187,83 @@
     path: /etc/zabbix/zabbix_server.conf
     regexp: '^#? DBPassword='
     line: "DBPassword={{ zabbix_server_db_password }}"
+    state: present
   no_log: true
   notify: Restart zabbix-server
 
-- name: Configure Zabbix frontend timezone
+- name: Configure Zabbix global script execution
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_server.conf
+    regexp: '^#? EnableGlobalScripts='
+    line: "EnableGlobalScripts={{ 1 if zabbix_server_enable_global_scripts else 0 }}"
+    state: present
+  notify: Restart zabbix-server
+
+- name: Check for Zabbix PHP-FPM pool configuration
+  ansible.builtin.stat:
+    path: /etc/php-fpm.d/zabbix.conf
+  register: zabbix_server_php_fpm_conf
+
+- name: Check for Zabbix Apache frontend configuration
+  ansible.builtin.stat:
+    path: /etc/httpd/conf.d/zabbix.conf
+  register: zabbix_server_httpd_conf
+
+- name: Remove stale Apache timezone override on PHP-FPM based installs
+  ansible.builtin.lineinfile:
+    path: /etc/httpd/conf.d/zabbix.conf
+    regexp: '^\s*php_value date\.timezone\s+'
+    state: absent
+  when:
+    - zabbix_server_php_fpm_conf.stat.exists
+    - zabbix_server_httpd_conf.stat.exists
+  notify: Restart httpd
+
+- name: Configure Zabbix frontend timezone in PHP-FPM pool
+  ansible.builtin.lineinfile:
+    path: /etc/php-fpm.d/zabbix.conf
+    regexp: '^\s*[;#]?\s*php_value\[date\.timezone\]\s*='
+    line: "php_value[date.timezone] = {{ zabbix_server_frontend_timezone }}"
+    insertafter: '^\s*php_value\[max_input_vars\]\s*='
+  when: zabbix_server_php_fpm_conf.stat.exists
+  notify:
+    - Restart php-fpm
+    - Restart httpd
+
+- name: Configure Zabbix frontend timezone in Apache config
   ansible.builtin.lineinfile:
     path: /etc/httpd/conf.d/zabbix.conf
     regexp: '^\s*php_value date.timezone'
     line: "        php_value date.timezone {{ zabbix_server_frontend_timezone }}"
     insertafter: '^\s*# php_value date.timezone'
+  when:
+    - not zabbix_server_php_fpm_conf.stat.exists
+    - zabbix_server_httpd_conf.stat.exists
   notify:
     - Restart httpd
     - Restart php-fpm
+
+- name: Ensure Zabbix web config directory exists
+  ansible.builtin.file:
+    path: /etc/zabbix/web
+    state: directory
+    owner: apache
+    group: apache
+    mode: "0755"
+  tags: [zabbix_frontend]
+
+- name: Deploy Zabbix frontend database configuration
+  ansible.builtin.template:
+    src: zabbix.conf.php.j2
+    dest: /etc/zabbix/web/zabbix.conf.php
+    owner: apache
+    group: apache
+    mode: "0640"
+  no_log: true
+  notify:
+    - Restart httpd
+    - Restart php-fpm
+  tags: [zabbix_frontend]
 
 - name: Ensure Zabbix server services are enabled and started
   ansible.builtin.service:

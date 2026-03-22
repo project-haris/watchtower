@@ -9,6 +9,9 @@ elasticsearch_node_name: "haris-citadel"
 #     immediate: true
 #     state: enabled
 
+agent_param_server: "127.0.0.1"
+agent_param_serveractive: "127.0.0.1"
+
 firewalld_config:
   DefaultZone: drop
 
