@@ -14,6 +14,13 @@ users_deleted: "{{ vars_common_all_users_deleted }}"
 tailscale_authkey: "{{ vars_common_all_tailscale_auth_key }}"
 tailscale_args: "--ssh"
 
+repository_version: "7.0"
+agent_variant: 2
+agent_major_version: "7.0"
+agent_apply_firewalld_rule: false
+agent_param_server: "haris-citadel"
+agent_param_serveractive: "haris-citadel"
+agent_param_hostname: "{{ inventory_hostname }}"
 haris_signalk_port: 3000
 kibana_port: 5601
 haris_soc_forward_enabled: true
@@ -34,6 +41,8 @@ firewalld_zones:
       - port: "{{ haris_signalk_port }}"
         protocol: tcp
       - port: "{{ kibana_port }}"
+        protocol: tcp
+      - port: 10050
         protocol: tcp
       - port: 9200
         protocol: tcp

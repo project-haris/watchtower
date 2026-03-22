@@ -1,0 +1,149 @@
+- name: Validate Zabbix server secrets
+  ansible.builtin.assert:
+    that:
+      - zabbix_server_db_password | length > 0
+    fail_msg: "Set zabbix_server_db_password in vars_common_secrets.yml before deploying the Zabbix server."
+
+- name: Validate supported Zabbix server platform
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'RedHat'
+    fail_msg: "zabbix_server currently supports RedHat/Rocky family hosts only."
+
+- name: Check whether EPEL repo file exists
+  ansible.builtin.stat:
+    path: /etc/yum.repos.d/epel.repo
+  register: zabbix_server_epel_repo
+
+- name: Disable Zabbix packages from EPEL when present
+  ansible.builtin.ini_file:
+    path: /etc/yum.repos.d/epel.repo
+    section: epel
+    option: excludepkgs
+    value: zabbix*
+    no_extra_spaces: true
+  when: zabbix_server_epel_repo.stat.exists
+
+- name: Import Zabbix RPM GPG keys
+  ansible.builtin.rpm_key:
+    key: "{{ item }}"
+    state: present
+  loop: "{{ zabbix_server_repo_gpg_keys }}"
+
+- name: Install Zabbix release repository RPM
+  ansible.builtin.yum:
+    name: "{{ zabbix_server_repo_rpm_url }}"
+    state: present
+
+- name: Clean DNF metadata before Zabbix install
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: false
+
+- name: Install Zabbix server packages on RedHat
+  ansible.builtin.yum:
+    name: "{{ zabbix_server_packages_redhat }}"
+    state: present
+    update_cache: true
+    disablerepo:
+      - elastic-8.x
+      - epel
+
+- name: Install optional Zabbix agent2 plugin packages
+  ansible.builtin.yum:
+    name: "{{ zabbix_server_agent2_plugin_packages }}"
+    state: present
+    update_cache: true
+    disablerepo:
+      - elastic-8.x
+      - epel
+  when: zabbix_server_agent2_plugin_packages | length > 0
+
+- name: Enable and start MariaDB
+  ansible.builtin.service:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Create Zabbix database
+  community.mysql.mysql_db:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    name: "{{ zabbix_server_db_name }}"
+    state: present
+
+- name: Create Zabbix database user
+  community.mysql.mysql_user:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    name: "{{ zabbix_server_db_user }}"
+    password: "{{ zabbix_server_db_password }}"
+    priv: "{{ zabbix_server_db_name }}.*:ALL"
+    host: localhost
+    state: present
+  no_log: true
+
+- name: Enable MySQL function creator trust temporarily
+  community.mysql.mysql_query:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    query: "SET GLOBAL log_bin_trust_function_creators = 1;"
+
+- name: Check whether Zabbix schema is already imported
+  community.mysql.mysql_query:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    login_user: "{{ zabbix_server_db_user }}"
+    login_password: "{{ zabbix_server_db_password }}"
+    query: "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema='{{ zabbix_server_db_name }}';"
+  register: zabbix_server_schema_check
+  no_log: true
+
+- name: Import initial Zabbix schema
+  ansible.builtin.shell: "zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 --socket=/var/lib/mysql/mysql.sock -u{{ zabbix_server_db_user }} -p'{{ zabbix_server_db_password }}' {{ zabbix_server_db_name }}"
+  when: (zabbix_server_schema_check.query_result[0][0].table_count | int) == 0
+  no_log: true
+  notify: Restart zabbix-server
+
+- name: Disable MySQL function creator trust after import
+  community.mysql.mysql_query:
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    query: "SET GLOBAL log_bin_trust_function_creators = 0;"
+
+- name: Configure Zabbix server database name
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_server.conf
+    regexp: '^#? DBName='
+    line: "DBName={{ zabbix_server_db_name }}"
+  notify: Restart zabbix-server
+
+- name: Configure Zabbix server database user
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_server.conf
+    regexp: '^#? DBUser='
+    line: "DBUser={{ zabbix_server_db_user }}"
+  notify: Restart zabbix-server
+
+- name: Configure Zabbix server database password
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_server.conf
+    regexp: '^#? DBPassword='
+    line: "DBPassword={{ zabbix_server_db_password }}"
+  no_log: true
+  notify: Restart zabbix-server
+
+- name: Configure Zabbix frontend timezone
+  ansible.builtin.lineinfile:
+    path: /etc/httpd/conf.d/zabbix.conf
+    regexp: '^\s*php_value date.timezone'
+    line: "        php_value date.timezone {{ zabbix_server_frontend_timezone }}"
+    insertafter: '^\s*# php_value date.timezone'
+  notify:
+    - Restart httpd
+    - Restart php-fpm
+
+- name: Ensure Zabbix server services are enabled and started
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - php-fpm
+    - httpd
+    - zabbix-server

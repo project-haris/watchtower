@@ -16,7 +16,8 @@ collections:
   # https://docs.ansible.com/ansible/latest/collections/grafana/grafana/index.html
   - name: grafana.grafana
     version: 5.7.0
-
+  # Zabbix
+  - name: zabbix.zabbix
 roles:
   - name: linux_hardening
     src: https://github.com/githubixx/ansible-role-harden-linux

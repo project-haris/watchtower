@@ -1,0 +1,18 @@
+zabbix_server_db_name: zabbix
+zabbix_server_db_user: zabbix
+zabbix_server_db_password: ""
+zabbix_server_frontend_timezone: UTC
+zabbix_server_repo_rpm_url: "https://repo.zabbix.com/zabbix/7.0/rocky/10/x86_64/zabbix-release-latest-7.0.el10.noarch.rpm"
+zabbix_server_repo_gpg_keys:
+  - "https://repo.zabbix.com/RPM-GPG-KEY-ZABBIX-B5333005"
+zabbix_server_packages_redhat:
+  - mariadb-server
+  - python3-PyMySQL
+  - httpd
+  - php-fpm
+  - zabbix-server-mysql
+  - zabbix-web-mysql
+  - zabbix-apache-conf
+  - zabbix-sql-scripts
+  - zabbix-selinux-policy
+zabbix_server_agent2_plugin_packages: []

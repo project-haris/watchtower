@@ -21,6 +21,9 @@
     - { role: tailscale, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
     - { role: cron, tags: [cron], when: not (disabled_roles.cron | default(false)) }
     - { role: chrony, tags: [chrony], when: not (disabled_roles.chrony | default(false)) }
+    - { role: zabbix.zabbix.repository, tags: [zabbix, zabbix_repository], when: not (disabled_roles.zabbix_repository | default(false)) }
+    - { role: zabbix.zabbix.agent, tags: [zabbix, zabbix_agent], when: not (disabled_roles.zabbix_agent | default(false)) }
+    - { role: zabbix_server, tags: [zabbix, zabbix_server], when: (haris_install_zabbix_server | default(false)) and not (disabled_roles.zabbix_server | default(false)) }
     - { role: elk_stack, tags: [elk_stack], when: (haris_install_elk_stack | default(false)) and not (disabled_roles.elk_stack | default(false)) }
     # - { role: rsyslog,        tags: [rsyslog],                  when: not (disabled_roles.rsyslog | default(false)) }
     # - { role: custom_files,   tags: [custom_files,vault_auth],          when: not (disabled_roles.custom_files | default(false)) }

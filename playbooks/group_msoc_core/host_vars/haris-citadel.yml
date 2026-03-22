@@ -1,4 +1,5 @@
 haris_install_elk_stack: true
+haris_install_zabbix_server: true
 elasticsearch_cluster_name: "haris-cluster"
 elasticsearch_node_name: "haris-citadel"
 # firewalld_rules:
@@ -19,6 +20,12 @@ firewalld_zones:
     service:
       - name: ssh
     port:
+      - port: 80
+        protocol: tcp
+      - port: 10050
+        protocol: tcp
+      - port: 10051
+        protocol: tcp
       - port: "{{ kibana_port }}"
         protocol: tcp
       - port: 9200

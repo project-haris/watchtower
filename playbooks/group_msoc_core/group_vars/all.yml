@@ -4,6 +4,14 @@
 sysctl_items: "{{ vars_common_all_sysctl_items }}"
 # soft_yum
 soft_packages_latest: "{{ vars_common_all_packages_yum }}"
+soft_packages_keep_latest_disablerepo:
+  - "elastic-8.x"
+  - "zabbix-managed"
+soft_packages_keep_latest_exclude:
+  - "elasticsearch*"
+  - "kibana*"
+  - "logstash*"
+  - "zabbix*"
 
 # sshd
 users_auth_keys_etc: true
@@ -15,6 +23,14 @@ users_deleted: "{{ vars_common_all_users_deleted }}"
 
 tailscale_authkey: "{{ vars_common_all_tailscale_auth_key }}"
 tailscale_args: "--ssh"
+kibana_port: 5601
+repository_version: "7.0"
+agent_variant: 2
+agent_major_version: "7.0"
+agent_apply_firewalld_rule: false
+agent_param_server: "haris-citadel"
+agent_param_serveractive: "haris-citadel"
+agent_param_hostname: "{{ inventory_hostname }}"
 
 # cron
 cron_service_enabled: yes

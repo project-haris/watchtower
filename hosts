@@ -1,5 +1,5 @@
 [msoc_core]
-haris-gateway      ansible_host=100.105.105.88      internal_addr=192.168.42.216 public_addr=193.40.157.80 ansible_connection=local
+haris-gateway      ansible_host=100.105.105.88      internal_addr=192.168.42.216 public_addr=193.40.157.80 #ansible_connection=local
 haris-citadel      ansible_host=100.126.59.101      internal_addr=192.168.42.125 
 
 [vessel_edge]
