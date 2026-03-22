@@ -88,12 +88,48 @@
     dest: /etc/elasticsearch/elasticsearch.yml
   notify: Restart Elasticsearch
 
+- name: Compute Elasticsearch bootstrap password state hash
+  ansible.builtin.set_fact:
+    elasticsearch_bootstrap_password_hash: "{{ elasticsearch_bootstrap_password | hash('sha256') }}"
+  no_log: true
+  when: elasticsearch_security_enabled | bool
+
+- name: Check Elasticsearch bootstrap password state file
+  ansible.builtin.stat:
+    path: "{{ elasticsearch_bootstrap_password_state_file }}"
+  register: elasticsearch_bootstrap_password_state
+  when: elasticsearch_security_enabled | bool
+
+- name: Read Elasticsearch bootstrap password state file
+  ansible.builtin.slurp:
+    path: "{{ elasticsearch_bootstrap_password_state_file }}"
+  register: elasticsearch_bootstrap_password_state_contents
+  no_log: true
+  when:
+    - elasticsearch_security_enabled | bool
+    - elasticsearch_bootstrap_password_state.stat.exists
+
 - name: Set Elasticsearch bootstrap password in keystore
   ansible.builtin.command:
     cmd: /usr/share/elasticsearch/bin/elasticsearch-keystore add -f -x bootstrap.password
     stdin: "{{ elasticsearch_bootstrap_password }}"
   no_log: true
   notify: Restart Elasticsearch
+  when:
+    - elasticsearch_security_enabled | bool
+    - >-
+      (not elasticsearch_bootstrap_password_state.stat.exists)
+      or
+      ((elasticsearch_bootstrap_password_state_contents.content | b64decode | trim) != elasticsearch_bootstrap_password_hash)
+
+- name: Persist Elasticsearch bootstrap password state hash
+  ansible.builtin.copy:
+    content: "{{ elasticsearch_bootstrap_password_hash }}\n"
+    dest: "{{ elasticsearch_bootstrap_password_state_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
   when: elasticsearch_security_enabled | bool
 
 - name: Install Logstash on Debian
@@ -191,6 +227,7 @@
       indices:
         - names:
             - "logstash-*"
+            - "haris-signalk-*"
           privileges:
             - write
             - create

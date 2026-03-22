@@ -21,8 +21,8 @@ sshd: "{{ vars_common_all_sshd }}"
 users: "{{ vars_common_all_root_user + vars_common_all_admin_users }}"
 users_deleted: "{{ vars_common_all_users_deleted }}"
 
-tailscale_authkey: "{{ vars_common_all_tailscale_auth_key }}"
 tailscale_args: "--ssh"
+auth_key_in_state: false
 chrony_timezone: "Europe/Tallinn"
 kibana_port: 5601
 zabbix_repository_version: "7.0"

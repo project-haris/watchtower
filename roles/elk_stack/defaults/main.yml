@@ -10,6 +10,7 @@ elasticsearch_cluster_name: "elk-cluster"
 elasticsearch_node_name: "node-01"
 elasticsearch_security_enabled: true
 elasticsearch_bootstrap_password: "{{ elasticsearch_elastic_password }}"
+elasticsearch_bootstrap_password_state_file: "/etc/elasticsearch/.ansible_bootstrap_password.sha256"
 elasticsearch_elastic_password: ""
 kibana_system_password: ""
 logstash_internal_username: "logstash_internal"

@@ -2,7 +2,7 @@
 
 ## Description
 
-This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debian/Ubuntu and Rocky/RedHat family systems. It handles repository setup, package installation, and configuration for all three components.
+This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debian/Ubuntu and Rocky/RedHat family systems. It handles repository setup, package installation, and configuration for all three components, including the Logstash TCP input used by Project Haris edge nodes.
 
 ## Requirements
 
@@ -31,6 +31,8 @@ This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debi
 | `kibana_server_host` | `"0.0.0.0"` | Kibana bind address |
 | `kibana_port` | `5601` | Kibana web interface port |
 | `logstash_conf_dir` | `"/etc/logstash/conf.d"` | Logstash pipeline config directory |
+| `logstash_beats_port` | `5044` | Beats input port |
+| `logstash_signalk_port` | `5045` | TCP `json_lines` input for Haris Signal K forwarding |
 | `elasticsearch_cluster_name` | `"elk-cluster"` | Elasticsearch cluster name |
 | `elasticsearch_node_name` | `"node-01"` | Elasticsearch node name |
 | `elasticsearch_security_enabled` | `true` | Enable X-Pack security |
@@ -38,6 +40,15 @@ This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debi
 ## Dependencies
 
 None.
+
+## Project Haris Pipeline
+
+This role configures Logstash with:
+
+- a Beats input on `logstash_beats_port`
+- a TCP `json_lines` input on `logstash_signalk_port`
+
+Events with `source == "haris_signalk"` are indexed into `haris-signalk-*`. The built-in `logstash_writer` role is expected to have index permissions for both `logstash-*` and `haris-signalk-*`.
 
 ## Example Playbook
 
@@ -89,6 +100,13 @@ kibana_port: 5601
 3. **Test Elasticsearch**:
    ```bash
    curl http://localhost:9200
+   ```
+
+4. **Verify Haris Signal K Pipeline**:
+   ```bash
+   ss -ltnp | grep 5045
+   curl -u elastic:<password> http://localhost:9200/_security/role/logstash_writer?pretty
+   curl -u elastic:<password> "http://localhost:9200/haris-signalk-*/_search?pretty"
    ```
 
 ## Security Notes

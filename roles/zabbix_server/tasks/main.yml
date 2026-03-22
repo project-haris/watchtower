@@ -209,6 +209,21 @@
     path: /etc/httpd/conf.d/zabbix.conf
   register: zabbix_server_httpd_conf
 
+- name: Check for Apache default welcome page configuration
+  ansible.builtin.stat:
+    path: /etc/httpd/conf.d/welcome.conf
+  register: zabbix_server_welcome_conf
+
+- name: Disable Apache default welcome page configuration
+  ansible.builtin.replace:
+    path: /etc/httpd/conf.d/welcome.conf
+    regexp: '^(?!#)(\s*\S.*)$'
+    replace: '# \1'
+  when:
+    - zabbix_server_disable_default_welcome_page | bool
+    - zabbix_server_welcome_conf.stat.exists
+  notify: Restart httpd
+
 - name: Remove stale Apache timezone override on PHP-FPM based installs
   ansible.builtin.lineinfile:
     path: /etc/httpd/conf.d/zabbix.conf

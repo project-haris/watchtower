@@ -23,8 +23,3 @@ haris_soc_forward_enabled: false
 haris_soc_log_host: ""
 haris_soc_log_port: 5045
 
-# Tailscale VPN Settings
-haris_tailscale_authkey: ""
-haris_tailscale_args: ""
-haris_tailscale_tags: []
-haris_tailscale_up_skip: false

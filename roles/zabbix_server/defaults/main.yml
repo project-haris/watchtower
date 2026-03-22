@@ -7,6 +7,7 @@ zabbix_server_db_encoding: utf8mb4
 zabbix_server_db_collation: utf8mb4_bin
 zabbix_server_enable_global_scripts: true
 zabbix_server_frontend_timezone: UTC
+zabbix_server_disable_default_welcome_page: true
 zabbix_server_repo_rpm_url: "https://repo.zabbix.com/zabbix/7.0/rocky/10/x86_64/zabbix-release-latest-7.0.el10.noarch.rpm"
 zabbix_server_repo_gpg_keys:
   - "https://repo.zabbix.com/RPM-GPG-KEY-ZABBIX-B5333005"
