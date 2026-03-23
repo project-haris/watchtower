@@ -7,7 +7,7 @@ This role automates the deployment and configuration of the **Project Haris** ed
 The role handles:
 - **System Preparation**: User creation, system dependencies, and CAN bus interface setup.
 - **Signal K Server**: Installation and configuration of the Signal K data server for NMEA 2000/0183 ingestion.
-- **Application Integration**: Deployment of the custom `harisd` data aggregator and service.
+- **Application Integration**: Deployment of the custom `harisd` data aggregator, local JSONL logging, and Filebeat shipping.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ The role handles:
 
 ## Scope
 
-This role does not install or configure Tailscale. Apply the `tailscale` role explicitly from your playbook when you want VPN access on the node.
+This role does not install or configure Tailscale. Apply the `artis3n.tailscale.machine` collection role explicitly from your playbook when you want VPN access on the node.
 
 ## Role Structure
 
@@ -65,16 +65,20 @@ Variables are defined in `defaults/main.yml`. You **must** override the identifi
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `haris_soc_forward_enabled` | `false` | Enable forwarding of Signal K snapshots to the SOC pipeline. |
-| `haris_soc_log_host` | `""` | Destination host for JSON line forwarding, typically Citadel. |
-| `haris_soc_log_port` | `5045` | Destination TCP port for Logstash JSON input. |
+| `haris_soc_forward_enabled` | `false` | Enable legacy direct TCP forwarding of Signal K snapshots to the SOC pipeline. |
+| `haris_soc_log_host` | `""` | Destination host for legacy JSON line forwarding, typically Citadel. |
+| `haris_soc_log_port` | `5045` | Destination TCP port for the legacy Logstash `json_lines` input. |
 | `haris_snapshot_interval` | `10` | Poll interval in seconds for the local Signal K API. |
+| `haris_filebeat_enabled` | `true` | Install and configure Filebeat on the edge device. |
+| `haris_filebeat_logstash_host` | `{{ haris_soc_log_host }}` | Destination Logstash host for the Beats pipeline. |
+| `haris_filebeat_logstash_port` | `5044` | Destination Beats port on the M-SOC Logstash host. |
+| `haris_filebeat_log_path` | `{{ haris_home }}/logs/signalk_snapshots.jsonl` | JSONL log file tailed by Filebeat. |
 
 ## Dependencies
 
 None.
 
-If you also want VPN access, apply the `tailscale` role separately. If you also want Elasticsearch, Logstash, and Kibana, use the separate `elk_stack` role alongside `haris`.
+If you also want VPN access, apply the `artis3n.tailscale.machine` collection role separately. If you also want Elasticsearch, Logstash, and Kibana, use the separate `elk_stack` role alongside `haris`.
 
 ## Example Playbook
 
@@ -116,10 +120,12 @@ haris_signalk_admin_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   663864396539666364663166...
 
-# SOC forwarding
-haris_soc_forward_enabled: true
+# SOC forwarding via Filebeat
+haris_soc_forward_enabled: false
 haris_soc_log_host: "haris-citadel"
-haris_soc_log_port: 5045
+haris_filebeat_enabled: true
+haris_filebeat_logstash_host: "haris-citadel"
+haris_filebeat_logstash_port: 5044
 ```
 
 ## Deployment Steps
@@ -138,6 +144,7 @@ haris_soc_log_port: 5045
     ssh haris@<tailscale-hostname>
     sudo systemctl status harisd
     sudo systemctl status signalk
+    sudo systemctl status filebeat
     ```
 2.  **Check Local Signal K API**:
     ```bash
@@ -147,14 +154,19 @@ haris_soc_log_port: 5045
     ```bash
     sudo tail -n 5 /opt/haris/logs/signalk_snapshots.jsonl
     ```
-4.  **Check SOC Forwarding**:
-    Ensure `haris_soc_forward_enabled` is true and verify that Citadel is listening on TCP `5045`.
-5.  **Check Firewall**:
+4.  **Check Filebeat Shipping**:
+    ```bash
+    sudo filebeat test config
+    sudo filebeat test output
+    ```
+5.  **Check SOC Forwarding**:
+    Verify that Citadel is listening on TCP `5044` for Beats traffic. Enable `haris_soc_forward_enabled` only if you also want the legacy direct TCP `5045` path.
+6.  **Check Firewall**:
     ```bash
     sudo firewall-cmd --state
     sudo firewall-cmd --zone=tailscale --list-all
     ```
-6.  **Access Dashboards**:
+7.  **Access Dashboards**:
     - **Signal K**: `http://<tailscale-hostname>:3000`
 
 ## Security Architecture

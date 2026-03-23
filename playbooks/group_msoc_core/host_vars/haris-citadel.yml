@@ -30,3 +30,5 @@ firewalld_zones:
         protocol: tcp
       - port: "{{ logstash_signalk_port }}"
         protocol: tcp
+      - port: "{{ logstash_beats_port }}"
+        protocol: tcp

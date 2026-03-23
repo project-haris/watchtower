@@ -18,12 +18,8 @@
     - { role: soft_apt, tags: [soft, soft_apt], when: not (disabled_roles.soft_apt | default(false)) }
     - { role: firewalld, tags: [firewalld], when: not (disabled_roles.firewalld | default(false)) }
     - { role: resolv_hosts, tags: [resolv_hosts], when: not (disabled_roles.resolv_hosts | default(false)) }
-    - { role: tailscale, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
+    - { role: artis3n.tailscale.machine, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
     - { role: cron, tags: [cron], when: not (disabled_roles.cron | default(false)) }
     - { role: haris, tags: [haris], when: not (disabled_roles.haris | default(false)) }
     - { role: chrony, tags: [chrony], when: not (disabled_roles.chrony | default(false)) }
     - { role: zabbix_agent, tags: [zabbix, zabbix_agent], when: not (disabled_roles.zabbix_agent | default(false)) }
-    # - { role: rsyslog,        tags: [rsyslog],                  when: not (disabled_roles.rsyslog | default(false)) }
-    # - { role: custom_files,   tags: [custom_files,vault_auth],          when: not (disabled_roles.custom_files | default(false)) }
-    # - { role: networkmanager,        tags: [networkmanager] }
-    # - { role: pam,            tags: [pam,ad_auth],                          when: not (disabled_roles.pam | default(false)) }

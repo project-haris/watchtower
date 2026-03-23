@@ -18,12 +18,13 @@ collections:
     version: 5.7.0
   # Zabbix
   - name: zabbix.zabbix
+  # tailscale 
+  # https://github.com/artis3n/ansible-collection-tailscale
+  - name: artis3n.tailscale
+
 roles:
   - name: linux_hardening
     src: https://github.com/githubixx/ansible-role-harden-linux
-    scm: git
-  - name: tailscale
-    src: https://github.com/artis3n/ansible-role-tailscale
     scm: git
   - name: wireguard
     src: https://github.com/githubixx/ansible-role-wireguard

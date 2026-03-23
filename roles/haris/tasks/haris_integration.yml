@@ -21,10 +21,25 @@
     dest: /etc/systemd/system/harisd.service
   notify: Restart Haris Service
 
+- name: Deploy Filebeat configuration
+  template:
+    src: filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Filebeat
+  when: haris_filebeat_enabled | bool
+
 - name: Enable Services
   service:
-    name: "{{ item }}"
+    name: harisd
     enabled: yes
     state: started
-  loop:
-    - harisd
+
+- name: Enable Filebeat service
+  service:
+    name: filebeat
+    enabled: yes
+    state: started
+  when: haris_filebeat_enabled | bool

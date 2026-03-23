@@ -22,4 +22,7 @@ haris_snapshot_interval: 10
 haris_soc_forward_enabled: false
 haris_soc_log_host: ""
 haris_soc_log_port: 5045
-
+haris_filebeat_enabled: true
+haris_filebeat_logstash_host: "{{ haris_soc_log_host }}"
+haris_filebeat_logstash_port: 5044
+haris_filebeat_log_path: "{{ haris_home }}/logs/signalk_snapshots.jsonl"

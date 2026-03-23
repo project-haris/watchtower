@@ -24,9 +24,12 @@ agent_param_serveractive: "{{vars_common_all_zabbix_server}}"
 agent_param_hostname: "{{ inventory_hostname }}"
 haris_signalk_port: 3000
 kibana_port: 5601
-haris_soc_forward_enabled: true
+haris_soc_forward_enabled: false
 haris_soc_log_host: "haris-citadel"
 haris_soc_log_port: 5045
+haris_filebeat_enabled: true
+haris_filebeat_logstash_host: "haris-citadel"
+haris_filebeat_logstash_port: 5044
 
 firewalld_config:
   DefaultZone: drop

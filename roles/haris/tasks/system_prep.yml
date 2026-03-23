@@ -8,8 +8,45 @@
       - can-utils
       - ifupdown
       - firewalld
+      - apt-transport-https
+      - gnupg
     state: present
     update_cache: yes
+
+- name: Ensure keyrings directory exists for Filebeat repository
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+  when: haris_filebeat_enabled | bool
+
+- name: Download Elastic GPG key for Filebeat
+  get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: /usr/share/keyrings/elastic-keyring.asc
+    mode: '0644'
+  when: haris_filebeat_enabled | bool
+
+- name: Dearmor Elastic GPG key for Filebeat
+  command:
+    cmd: gpg --dearmor -o /usr/share/keyrings/elastic-archive-keyring.gpg /usr/share/keyrings/elastic-keyring.asc
+  args:
+    creates: /usr/share/keyrings/elastic-archive-keyring.gpg
+  when: haris_filebeat_enabled | bool
+
+- name: Add Elastic apt repository for Filebeat
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main"
+    state: present
+    filename: elastic-8.x
+    update_cache: true
+  when: haris_filebeat_enabled | bool
+
+- name: Install Filebeat
+  apt:
+    name: filebeat
+    state: present
+  when: haris_filebeat_enabled | bool
 
 - name: Create Haris group
   group:
