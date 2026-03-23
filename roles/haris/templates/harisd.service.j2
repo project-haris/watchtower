@@ -1,6 +1,7 @@
 [Unit]
 Description=Project Haris Data Collector
-After=network.target
+Wants=network-online.target signalk.service
+After=network-online.target signalk.service
 
 [Service]
 Type=simple
@@ -16,6 +17,7 @@ Environment="HARIS_SOC_LOG_HOST={{ haris_soc_log_host }}"
 Environment="HARIS_SOC_LOG_PORT={{ haris_soc_log_port }}"
 ExecStart=/usr/bin/python3 {{ haris_home }}/src/data_aggregator.py
 Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

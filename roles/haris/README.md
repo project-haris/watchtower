@@ -146,10 +146,13 @@ haris_filebeat_logstash_port: 5044
     sudo systemctl status signalk
     sudo systemctl status filebeat
     ```
+    `harisd` is ordered after `signalk.service`, so if you restart Signal K during maintenance you should expect the collector to recover cleanly after Signal K is listening again.
 2.  **Check Local Signal K API**:
     ```bash
+    curl http://127.0.0.1:3000/signalk/v1/api/
     curl http://127.0.0.1:3000/signalk/v1/api/vessels/self
     ```
+    `harisd` prefers `/signalk/v1/api/vessels/self`, but it will fall back to `/signalk/v1/api/` if Signal K temporarily returns `404` during startup, discovery, or after server upgrades.
 3.  **Check Local Collector Output**:
     ```bash
     sudo tail -n 5 /opt/haris/logs/signalk_snapshots.jsonl

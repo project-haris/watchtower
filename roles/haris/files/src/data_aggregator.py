@@ -31,6 +31,34 @@ def fetch_signalk_snapshot(api_url: str) -> dict:
         return json.load(response)
 
 
+def api_root_url(api_url: str) -> str:
+    marker = "/vessels/self"
+    if api_url.endswith(marker):
+        return api_url[: -len(marker)] + "/"
+    return api_url
+
+
+def fetch_signalk_snapshot_with_fallback(api_url: str) -> dict:
+    fallback_exc = None
+    try:
+        return fetch_signalk_snapshot(api_url)
+    except HTTPError as exc:
+        if exc.code != 404:
+            raise
+        fallback_exc = exc
+
+    root_url = api_root_url(api_url)
+    if root_url == api_url:
+        raise fallback_exc
+
+    logger.warning(
+        "Signal K endpoint %s returned 404; falling back to API root %s",
+        api_url,
+        root_url,
+    )
+    return fetch_signalk_snapshot(root_url)
+
+
 def build_event(payload: dict) -> dict:
     return {
         "@timestamp": utc_now(),
@@ -74,7 +102,7 @@ def main() -> None:
 
     while True:
         try:
-            payload = fetch_signalk_snapshot(api_url)
+            payload = fetch_signalk_snapshot_with_fallback(api_url)
             event = build_event(payload)
             write_jsonl(log_path, event)
 
