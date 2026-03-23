@@ -18,3 +18,5 @@ logstash_internal_password: ""
 kibana_encrypted_saved_objects_encryption_key: ""
 kibana_security_encryption_key: ""
 kibana_reporting_encryption_key: ""
+haris_signalk_index_template_name: "haris-signalk"
+haris_signalk_index_template_priority: 200

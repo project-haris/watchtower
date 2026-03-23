@@ -36,6 +36,8 @@ This role deploys a complete ELK (Elasticsearch, Logstash, Kibana) stack on Debi
 | `elasticsearch_cluster_name` | `"elk-cluster"` | Elasticsearch cluster name |
 | `elasticsearch_node_name` | `"node-01"` | Elasticsearch node name |
 | `elasticsearch_security_enabled` | `true` | Enable X-Pack security |
+| `haris_signalk_index_template_name` | `"haris-signalk"` | Composable index template name for `haris-signalk-*`. |
+| `haris_signalk_index_template_priority` | `200` | Template priority for Haris Signal K indices. |
 
 ## Dependencies
 
@@ -49,6 +51,8 @@ This role configures Logstash with:
 - a TCP `json_lines` input on `logstash_signalk_port`
 
 Events with `source == "haris_signalk"` are indexed into `haris-signalk-*`. The built-in `logstash_writer` role is expected to have index permissions for both `logstash-*` and `haris-signalk-*`.
+
+The role also creates an Elasticsearch index template for `haris-signalk-*` so ECS fields such as `host.name` remain compatible with Filebeat-enriched events.
 
 ## Example Playbook
 
@@ -106,6 +110,7 @@ kibana_port: 5601
    ```bash
    ss -ltnp | grep 5045
    curl -u elastic:<password> http://localhost:9200/_security/role/logstash_writer?pretty
+   curl -u elastic:<password> http://localhost:9200/_index_template/haris-signalk?pretty
    curl -u elastic:<password> "http://localhost:9200/haris-signalk-*/_search?pretty"
    ```
 

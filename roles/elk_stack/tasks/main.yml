@@ -237,6 +237,68 @@
   no_log: true
   when: elasticsearch_security_enabled | bool
 
+- name: Create Haris Signal K index template with security enabled
+  ansible.builtin.uri:
+    url: "http://localhost:9200/_index_template/{{ haris_signalk_index_template_name }}"
+    method: PUT
+    user: elastic
+    password: "{{ elasticsearch_elastic_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      index_patterns:
+        - "haris-signalk-*"
+      priority: "{{ haris_signalk_index_template_priority }}"
+      template:
+        mappings:
+          properties:
+            "@timestamp":
+              type: date
+            source:
+              type: keyword
+            vessel_id:
+              type: keyword
+            vessel_name:
+              type: keyword
+            haris_host:
+              type: keyword
+            host:
+              properties:
+                name:
+                  type: keyword
+    status_code: 200
+  no_log: true
+  when: elasticsearch_security_enabled | bool
+
+- name: Create Haris Signal K index template with security disabled
+  ansible.builtin.uri:
+    url: "http://localhost:9200/_index_template/{{ haris_signalk_index_template_name }}"
+    method: PUT
+    body_format: json
+    body:
+      index_patterns:
+        - "haris-signalk-*"
+      priority: "{{ haris_signalk_index_template_priority }}"
+      template:
+        mappings:
+          properties:
+            "@timestamp":
+              type: date
+            source:
+              type: keyword
+            vessel_id:
+              type: keyword
+            vessel_name:
+              type: keyword
+            haris_host:
+              type: keyword
+            host:
+              properties:
+                name:
+                  type: keyword
+    status_code: 200
+  when: not elasticsearch_security_enabled | bool
+
 - name: Create Logstash internal user
   ansible.builtin.uri:
     url: "http://localhost:9200/_security/user/{{ logstash_internal_username }}"

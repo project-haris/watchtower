@@ -9,6 +9,8 @@ The role handles:
 - **Signal K Server**: Installation and configuration of the Signal K data server for NMEA 2000/0183 ingestion.
 - **Application Integration**: Deployment of the custom `harisd` data aggregator, local JSONL logging, and Filebeat shipping.
 
+Haris snapshots use `haris_host` for the edge hostname so they do not collide with the ECS `host.*` fields added by Filebeat.
+
 ## Requirements
 
 ### Platform

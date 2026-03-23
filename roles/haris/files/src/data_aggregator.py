@@ -63,7 +63,7 @@ def build_event(payload: dict) -> dict:
     return {
         "@timestamp": utc_now(),
         "source": "haris_signalk",
-        "host": socket.gethostname(),
+        "haris_host": socket.gethostname(),
         "vessel_id": os.getenv("HARIS_VESSEL_ID", "UNKNOWN"),
         "vessel_name": os.getenv("HARIS_VESSEL_NAME", "UNKNOWN"),
         "signalk": payload,
