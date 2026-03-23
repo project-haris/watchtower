@@ -28,3 +28,4 @@
     # - { role: custom_files,   tags: [custom_files,vault_auth],          when: not (disabled_roles.custom_files | default(false)) }
     # - { role: networkmanager,        tags: [networkmanager] }
     # - { role: pam,            tags: [pam,ad_auth],                          when: not (disabled_roles.pam | default(false)) }
+    - { role: docker, tags: [docker], when: haris_install_docker | default(false) }

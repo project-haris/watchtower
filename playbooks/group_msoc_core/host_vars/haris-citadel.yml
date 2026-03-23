@@ -1,5 +1,6 @@
 haris_install_elk_stack: true
 haris_install_zabbix_server: true
+haris_install_docker: true
 elasticsearch_cluster_name: "haris-cluster"
 elasticsearch_node_name: "haris-citadel"
 
@@ -17,6 +18,8 @@ firewalld_zones:
     service:
       - name: ssh
     port:
+      - port: 8080 #vsat-honeypot
+        protocol: tcp
       - port: 10050
         protocol: tcp
       - port: 10051

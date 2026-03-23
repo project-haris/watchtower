@@ -79,5 +79,5 @@ roles:
   #   src: https://github.com/geerlingguy/ansible-role-apache
   # - name: nginx
   #   src: https://github.com/geerlingguy/ansible-role-nginx
-  # - name: docker
-  #   src: https://github.com/geerlingguy/ansible-role-docker
+  - name: docker
+    src: https://github.com/geerlingguy/ansible-role-docker
