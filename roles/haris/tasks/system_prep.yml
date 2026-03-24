@@ -36,7 +36,7 @@
 
 - name: Add Elastic apt repository for Filebeat
   apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main"
+    repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}] https://artifacts.elastic.co/packages/8.x/apt stable main"
     state: present
     filename: elastic-8.x
     update_cache: true

@@ -1,4 +1,4 @@
-zabbix_agent_repo_version: "{{ zabbix_repository_version | default(agent_major_version | default('7.0')) }}"
+zabbix_agent_repo_version: "{{ zabbix_repository_version | default(agent_major_version | default('7.4')) }}"
 zabbix_agent_variant: "{{ agent_variant | default(2) | string }}"
 zabbix_agent_server: "{{ agent_param_server | default('127.0.0.1') }}"
 zabbix_agent_serveractive: "{{ agent_param_serveractive | default('127.0.0.1') }}"

@@ -39,7 +39,7 @@
 
     - name: Add Elastic apt repository
       ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg] https://artifacts.elastic.co/packages/{{ elasticsearch_version }}/apt stable main"
+        repo: "deb [signed-by=/usr/share/keyrings/elastic-archive-keyring.gpg arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}] https://artifacts.elastic.co/packages/{{ elasticsearch_version }}/apt stable main"
         state: present
         filename: elastic-{{ elasticsearch_version }}
         update_cache: true

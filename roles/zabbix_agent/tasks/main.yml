@@ -19,8 +19,17 @@
   ansible.builtin.set_fact:
     zabbix_agent_repo_os_redhat: "{{ zabbix_agent_repo_os_redhat_map.get(ansible_distribution, 'rhel') }}"
     zabbix_agent_repo_major_redhat: "{{ ansible_distribution_major_version | string }}"
+    zabbix_agent_repo_baseurl_redhat: >-
+      {{
+        zabbix_agent_repository_url ~ '/zabbix/' ~ zabbix_agent_repo_version ~
+        (
+          '/stable/rhel/' ~ (ansible_distribution_major_version | string) ~ '/$basearch/'
+          if (ansible_distribution_major_version | int) >= 10
+          else '/' ~ zabbix_agent_repo_os_redhat ~ '/' ~ (ansible_distribution_major_version | string) ~ '/$basearch/'
+        )
+      }}
     zabbix_agent_repo_os_debian: "{{ 'raspbian' if ansible_distribution == 'Raspbian' else 'debian' }}"
-    zabbix_agent_repo_arch_debian: "{{ '' if (ansible_architecture == 'x86_64' or ansible_distribution == 'Raspbian') else ('-arm64' if ansible_architecture == 'aarch64' else '') }}"
+    zabbix_agent_repo_arch_debian: "{{ zabbix_agent_debian_arch_map.get(ansible_architecture, omit) }}"
   vars:
     zabbix_agent_repo_os_redhat_map:
       RedHat: rhel
@@ -28,6 +37,16 @@
       AlmaLinux: alma
       OracleLinux: oracle
       CentOS: centos
+    zabbix_agent_debian_arch_map:
+      x86_64: amd64
+      aarch64: arm64
+      armv7l: armhf
+      armv6l: armhf
+
+- name: Set Zabbix Debian repository base URL
+  ansible.builtin.set_fact:
+    zabbix_agent_repo_baseurl_debian: "{{ zabbix_agent_repository_url }}/zabbix/{{ zabbix_agent_repo_version }}/stable/{{ zabbix_agent_repo_os_debian }}"
+  when: ansible_os_family == 'Debian'
 
 - name: Import Zabbix RPM GPG keys
   ansible.builtin.rpm_key:
@@ -52,7 +71,7 @@
   ansible.builtin.yum_repository:
     name: "{{ zabbix_agent_repository_name }}"
     description: "{{ zabbix_agent_repository_description }}"
-    baseurl: "{{ zabbix_agent_repository_url }}/zabbix/{{ zabbix_agent_repo_version }}/{{ zabbix_agent_repo_os_redhat }}/{{ zabbix_agent_repo_major_redhat }}/$basearch/"
+    baseurl: "{{ zabbix_agent_repo_baseurl_redhat }}"
     gpgcheck: true
     gpgkey: "{{ zabbix_agent_repo_gpg_keys_redhat[zabbix_agent_repo_major_redhat] | default(zabbix_agent_repo_gpg_keys_redhat['10']) }}"
     priority: "{{ zabbix_agent_repository_priority }}"
@@ -87,11 +106,11 @@
     types:
       - deb
       - deb-src
-    uris: "{{ zabbix_agent_repository_url }}/zabbix/{{ zabbix_agent_repo_version }}/{{ zabbix_agent_repo_os_debian }}{{ zabbix_agent_repo_arch_debian }}"
+    uris: "{{ zabbix_agent_repo_baseurl_debian }}"
     suites: "{{ ansible_distribution_release }}"
     components:
       - main
-    architectures: "{{ 'arm64' if ansible_architecture == 'aarch64' else omit }}"
+    architectures: "{{ zabbix_agent_repo_arch_debian }}"
     signed_by: "{{ zabbix_agent_repository_url }}/zabbix-official-repo.key"
   when: ansible_os_family == 'Debian'
 

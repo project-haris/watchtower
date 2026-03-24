@@ -25,9 +25,9 @@ tailscale_args: "--ssh"
 auth_key_in_state: false
 chrony_timezone: "Europe/Tallinn"
 kibana_port: 5601
-zabbix_repository_version: "7.0"
+zabbix_repository_version: "7.4"
 agent_variant: 2
-agent_major_version: "7.0"
+agent_major_version: "7.4"
 agent_apply_firewalld_rule: false
 agent_param_server: "{{vars_common_all_zabbix_server}}"
 agent_param_serveractive: "{{vars_common_all_zabbix_server}}"

@@ -15,6 +15,7 @@
     - { role: users_groups, tags: [users_groups], when: not (disabled_roles.users_groups | default(false)) }
     - { role: sshd, tags: [sshd], when: not (disabled_roles.sshd | default(false)) }   
     - { role: soft_apt, tags: [soft, soft_apt], when: not (disabled_roles.soft_apt | default(false)) }
+    - { role: mullvad_browser, tags: [mullvad_browser], when: not (disabled_roles.mullvad_browser | default(false)) }
     - { role: firewalld, tags: [firewalld], when: not (disabled_roles.firewalld | default(false)) }
     - { role: resolv_hosts, tags: [resolv_hosts], when: not (disabled_roles.resolv_hosts | default(false)) }
     - { role: artis3n.tailscale.machine, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }

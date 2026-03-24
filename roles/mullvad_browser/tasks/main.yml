@@ -1,0 +1,116 @@
+- name: Validate supported Mullvad Browser platform
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family in ['Debian', 'RedHat']
+    fail_msg: "mullvad_browser currently supports Debian-based and RedHat-family systems only."
+
+- name: Ensure curl is installed for Mullvad repository setup
+  ansible.builtin.package:
+    name: curl
+    state: present
+  when: ansible_os_family in ['Debian', 'RedHat']
+
+- name: Detect dpkg architecture for Mullvad repository
+  ansible.builtin.command:
+    cmd: dpkg --print-architecture
+  register: mullvad_browser_dpkg_arch
+  changed_when: false
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure keyrings directory exists for Mullvad repository
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: ansible_os_family == 'Debian'
+
+- name: Download Mullvad repository signing key
+  ansible.builtin.get_url:
+    url: "{{ mullvad_browser_keyring_url }}"
+    dest: "{{ mullvad_browser_keyring_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: ansible_os_family == 'Debian'
+
+- name: Configure Mullvad Browser apt repository list
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/mullvad.list
+    owner: root
+    group: root
+    mode: "0644"
+    content: >-
+      deb [signed-by={{ mullvad_browser_keyring_path }} arch={{ mullvad_browser_dpkg_arch.stdout }}]
+      {{ mullvad_browser_repository_url }} {{ mullvad_browser_repository_suite }}
+      {{ mullvad_browser_repository_component }}
+  when: ansible_os_family == 'Debian'
+
+- name: Refresh apt cache after Mullvad repository changes
+  ansible.builtin.apt:
+    update_cache: true
+  when: ansible_os_family == 'Debian'
+
+- name: Configure Mullvad RPM repository
+  ansible.builtin.get_url:
+    url: "{{ mullvad_browser_rpm_repo_url }}"
+    dest: /etc/yum.repos.d/mullvad.repo
+    owner: root
+    group: root
+    mode: "0644"
+  when: ansible_os_family == 'RedHat'
+
+- name: Refresh dnf cache after Mullvad repository changes
+  ansible.builtin.dnf:
+    update_cache: true
+  when: ansible_os_family == 'RedHat'
+
+- name: Check stable Mullvad Browser package availability
+  ansible.builtin.command:
+    cmd: "{{ 'apt-cache madison ' ~ mullvad_browser_package_name if ansible_os_family == 'Debian' else 'dnf list --showduplicates ' ~ mullvad_browser_package_name }}"
+  register: mullvad_browser_stable_policy
+  changed_when: false
+  failed_when: false
+
+- name: Check alpha Mullvad Browser package availability
+  ansible.builtin.command:
+    cmd: "{{ 'apt-cache madison ' ~ mullvad_browser_fallback_package_name if ansible_os_family == 'Debian' else 'dnf list --showduplicates ' ~ mullvad_browser_fallback_package_name }}"
+  register: mullvad_browser_alpha_policy
+  changed_when: false
+  failed_when: false
+
+- name: Select Mullvad Browser package to install
+  ansible.builtin.set_fact:
+    mullvad_browser_selected_package: >-
+      {{
+        mullvad_browser_package_name
+        if (
+          (mullvad_browser_stable_policy.stdout | trim | length) > 0
+          and 'No matching Packages to list' not in ((mullvad_browser_stable_policy.stdout | default('')) ~ (mullvad_browser_stable_policy.stderr | default('')))
+          and 'Error: No matching Packages to list' not in ((mullvad_browser_stable_policy.stdout | default('')) ~ (mullvad_browser_stable_policy.stderr | default('')))
+        )
+        else (
+          mullvad_browser_fallback_package_name
+          if (
+            (mullvad_browser_alpha_policy.stdout | trim | length) > 0
+            and 'No matching Packages to list' not in ((mullvad_browser_alpha_policy.stdout | default('')) ~ (mullvad_browser_alpha_policy.stderr | default('')))
+            and 'Error: No matching Packages to list' not in ((mullvad_browser_alpha_policy.stdout | default('')) ~ (mullvad_browser_alpha_policy.stderr | default('')))
+          )
+          else ''
+        )
+      }}
+
+- name: Fail when no Mullvad Browser package is available
+  ansible.builtin.fail:
+    msg: >-
+      Neither {{ mullvad_browser_package_name }} nor
+      {{ mullvad_browser_fallback_package_name }} is available from the Mullvad
+      repository for architecture
+      {{ mullvad_browser_dpkg_arch.stdout if ansible_os_family == 'Debian' else ansible_architecture }}.
+  when: mullvad_browser_selected_package | length == 0
+
+- name: Install Mullvad Browser package
+  ansible.builtin.package:
+    name: "{{ mullvad_browser_selected_package }}"
+    state: present

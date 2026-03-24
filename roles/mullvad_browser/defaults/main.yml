@@ -1,0 +1,8 @@
+mullvad_browser_repository_url: https://repository.mullvad.net/deb/stable
+mullvad_browser_repository_component: main
+mullvad_browser_repository_suite: stable
+mullvad_browser_rpm_repo_url: https://repository.mullvad.net/rpm/stable/mullvad.repo
+mullvad_browser_keyring_path: /usr/share/keyrings/mullvad-keyring.asc
+mullvad_browser_keyring_url: https://repository.mullvad.net/deb/mullvad-keyring.asc
+mullvad_browser_package_name: mullvad-browser
+mullvad_browser_fallback_package_name: mullvad-browser-alpha
