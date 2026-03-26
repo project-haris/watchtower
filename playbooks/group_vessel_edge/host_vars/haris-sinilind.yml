@@ -3,3 +3,5 @@ haris_vessel_name: "SINILIND"
 elasticsearch_heap_size: "4g"
 elastic_network_host: 0.0.0.0
 kibana_server_host: 0.0.0.0
+# Node-RED user
+nodered_user: haris

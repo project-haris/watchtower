@@ -50,7 +50,8 @@ firewalld_zones:
         protocol: tcp
       - port: 9200
         protocol: tcp
-
+      - port: 1880 #Node-RED
+        protocol: tcp
 # cron
 cron_service_enabled: yes
 cron_service_state: started

@@ -11,6 +11,7 @@ Watchtower is the Ansible automation repo for Project Haris vessel edge nodes an
 
 - `artis3n.tailscale.machine`: collection role that installs and authenticates Tailscale using `tailscale_authkey`
 - `roles/haris`: deploys Signal K and the `harisd` collector on vessel devices
+- `roles/nodered`: installs Node-RED on Debian-based edge devices using the official Node-RED installer
 - `roles/mullvad_browser`: installs Mullvad Browser on Debian-based edge devices from Mullvad's official apt repository
 - `roles/elk_stack`: deploys Elasticsearch, Logstash, and Kibana on core nodes
 - `roles/firewalld`, `roles/sshd`, `roles/chrony`, `roles/zabbix_*`: supporting system services
@@ -66,6 +67,7 @@ Target a specific role or host when needed:
 
 ```bash
 ansible-playbook playbooks/group_vessel_edge/main.yml -l haris-sinilind -t haris -D
+ansible-playbook playbooks/group_vessel_edge/main.yml -l haris-sinilind -t nodered -D
 ansible-playbook playbooks/group_msoc_core/main.yml -l haris-citadel -t elk_stack -D
 ```
 

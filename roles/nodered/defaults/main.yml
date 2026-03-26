@@ -1,0 +1,13 @@
+nodered_script_url: https://github.com/node-red/linux-installers/releases/latest/download/update-nodejs-and-nodered-deb
+nodered_script_path: /usr/local/sbin/update-nodejs-and-nodered-deb
+nodered_user: haris
+nodered_install_pi_nodes: true
+nodered_enable_service: true
+nodered_start_service: true
+nodered_force_reinstall: false
+nodered_nodejs_major: "22"
+nodered_service_name: nodered
+nodered_prerequisite_packages:
+  - build-essential
+  - curl
+  - git

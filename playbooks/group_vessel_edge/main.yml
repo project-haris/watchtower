@@ -21,5 +21,6 @@
     - { role: artis3n.tailscale.machine, tags: [tailscale], when: not (disabled_roles.tailscale | default(false)) }
     - { role: cron, tags: [cron], when: not (disabled_roles.cron | default(false)) }
     - { role: haris, tags: [haris], when: not (disabled_roles.haris | default(false)) }
+    - { role: nodered, tags: [nodered], when: not (disabled_roles.nodered | default(false)) }
     - { role: chrony, tags: [chrony], when: not (disabled_roles.chrony | default(false)) }
     - { role: zabbix_agent, tags: [zabbix, zabbix_agent], when: not (disabled_roles.zabbix_agent | default(false)) }
