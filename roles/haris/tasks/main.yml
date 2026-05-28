@@ -5,6 +5,7 @@
 - name: Install Signal K
   include_tasks: signal_k.yml
   tags: [signalk]
+  when: haris_manage_signalk | bool
 
 - name: Deploy Project Haris Integration (Parsers & Services)
   include_tasks: haris_integration.yml

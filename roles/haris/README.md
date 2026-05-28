@@ -54,12 +54,89 @@ Variables are defined in `defaults/main.yml`. You **must** override the identifi
 | `haris_nmea2000_interface` | `"can0"` | The CAN interface name (usually `can0` for PiCAN-M). |
 | `haris_nmea0183_port` | `"/dev/ttyS0"` | Serial port for NMEA 0183 (PiCAN-M terminal block). |
 | `haris_nmea0183_baud` | `4800` | Baud rate for the serial port (Standard: 4800, HS: 38400). |
+| `haris_openplotter_mode` | `false` | Compatibility mode for OpenPlotter-managed hosts. When `true`, this role does not install/configure Signal K and does not manage CAN boot/network interface files. |
+| `haris_can_boot_config_lines` | `["# --- Project Haris PiCAN Config ---", "dtparam=spi=on", "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25"]` | Lines written to Raspberry Pi `config.txt` to enable the CAN HAT overlay. Override per host for different HATs. |
+| `haris_can_bitrate` | `250000` | CAN bitrate used in `/etc/network/interfaces.d/can0`. |
+
+### OpenPlotter Compatibility Mode
+
+Set `haris_openplotter_mode: true` on hosts where OpenPlotter already manages hardware and Signal K.
+
+When this mode is enabled, the role intentionally avoids reconfiguring core OpenPlotter-managed components:
+- Skips Signal K installation and role-managed Signal K service/template tasks (`roles/haris/tasks/signal_k.yml` is not included).
+- Skips CAN overlay writes to `/boot/firmware/config.txt` or `/boot/config.txt`.
+- Skips CAN overlay-triggered reboot logic.
+- Skips writing `/etc/network/interfaces.d/can0` and associated `ifupdown` CAN bring-up.
+
+What still runs in this mode:
+- System/user preparation required by Haris runtime.
+- Haris collector deployment and `harisd` service management.
+- Filebeat installation/config/service management when `haris_filebeat_enabled: true`.
+
+Why this mode exists:
+- OpenPlotter commonly manages CAN, serial/UART, and Signal K through its own tools and package flows.
+- Letting both systems manage the same components can cause configuration drift, unexpected reboots, or service conflicts.
+
+Recommended host vars pattern on OpenPlotter:
+```yaml
+haris_openplotter_mode: true
+haris_nmea0183_port: "/dev/ttyAMA2"   # Pi 5 MacArthur TX/RX 1 (UART2)
+haris_nmea2000_interface: "can0"      # Keep aligned with OpenPlotter CAN interface name
+```
+
+For MacArthur NMEA 2000 setup in the OpenPlotter CAN Bus app, choose the MCP251xfd device settings documented by MacArthur:
+- Interface: `SPI0 CE1`
+- Oscillator: `20000000`
+- Interrupt: `GPIO 25`
+
+If both `SPI0 CE0` and `SPI0 CE1` are shown, select `SPI0 CE1`. The MacArthur HAT NMEA 2000 CAN controller is wired to SPI0 chip-select 1.
+Reference: https://macarthur-hat-documentation.readthedocs.io/en/latest/nmea2000.html#configuration
+
+### CAN HAT Profiles (PiCAN-M vs MacArthur)
+
+Use host-specific overrides in `host_vars` when the vessel hardware differs.
+
+| HAT | CAN overlay (`haris_can_boot_config_lines`) | NMEA 0183 serial note | Notes |
+| :--- | :--- | :--- | :--- |
+| PiCAN-M | `dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25` | Usually `/dev/ttyS0` | Default profile used by this role. |
+| MacArthur HAT v1.2 | `dtoverlay=mcp251xfd,spi0-1,interrupt=25` | Depends on Pi model and enabled UARTs | MacArthur NMEA2000 uses MCP251xfd on SPI0 CE1 (GPIO 25 interrupt). |
+
+Example host override for MacArthur:
+
+```yaml
+haris_can_boot_config_lines:
+  - "# --- Project Haris MacArthur HAT Config ---"
+  - "dtparam=spi=on"
+  - "dtoverlay=mcp251xfd,spi0-1,interrupt=25"
+```
+
+For MacArthur NMEA 0183, UART mapping in docs is:
+- Raspberry Pi 4: TX/RX 1 on UART3, TX/RX 2 on UART5
+- Raspberry Pi 5: TX/RX 1 on UART2, TX/RX 2 on UART4
+  (exact section reference: https://macarthur-hat-documentation.readthedocs.io/en/latest/nmea0183.html#configuration)
+
+Set `haris_nmea0183_port` to the actual Linux device exposed on your target host after enabling those UARTs.
+For Raspberry Pi 5, a common mapping is:
+- TX/RX 1 (UART2) -> `/dev/ttyAMA2`
+- TX/RX 2 (UART4) -> `/dev/ttyAMA4`
+
+Current repository example for MacArthur on Raspberry Pi 5:
+- [playbooks/group_vessel_edge/host_vars/haris-arthur.yml](/home/ahmed/maritime/project-haris/watchtower/playbooks/group_vessel_edge/host_vars/haris-arthur.yml) sets `haris_nmea0183_port: "/dev/ttyAMA2"`.
+- The same host example enables `haris_openplotter_mode: true` so OpenPlotter keeps control of Signal K and CAN interface boot/network management.
+
+### Configuration Sources
+
+- PiCAN-M MCP2515 overlay convention (`mcp2515-can0`, 16MHz, GPIO 25): Raspberry Pi overlay usage pattern and role default legacy behavior in this repository.
+- MacArthur HAT NMEA2000 config (`MCP251xfd`, `SPI0 CE1`, `GPIO 25`, 20MHz reference in OpenPlotter UI):  
+  https://macarthur-hat-documentation.readthedocs.io/en/latest/nmea2000.html
+- MacArthur HAT NMEA0183 UART mapping by Pi model (Pi 4: UART3/UART5, Pi 5: UART2/UART4):  
+  https://macarthur-hat-documentation.readthedocs.io/en/latest/nmea0183.html#configuration
 
 ### Signal K Configuration
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `haris_signalk_version` | `"2.6.0"` | Version of Signal K Server to install. |
+| `haris_signalk_version` | `"2.23.0"` | Version of Signal K Server to install. |
 | `haris_signalk_port` | `3000` | Port for the Signal K web interface and API. |
 | `haris_signalk_admin_password` | `"change_me_password"` | **(Required)** Password for the Signal K admin interface. |
 
@@ -164,14 +241,37 @@ haris_filebeat_logstash_port: 5044
     sudo filebeat test config
     sudo filebeat test output
     ```
-5.  **Check SOC Forwarding**:
+5.  **Post-Playbook MacArthur HAT Validation**:
+    Run these checks after the playbook completes (and after reconnecting if a reboot occurred):
+    ```bash
+    # 1) Confirm CAN overlay is present in boot config
+    grep -n "mcp251xfd\|spi0-1" /boot/firmware/config.txt /boot/config.txt 2>/dev/null
+
+    # 2) Confirm CAN interface exists
+    ip -details link show can0
+
+    # 3) Bring CAN up at expected bitrate and verify
+    sudo ip link set can0 up type can bitrate 250000
+    ip -details link show can0
+
+    # 4) Check kernel probe logs for MacArthur CAN controller
+    dmesg | rg -i "mcp251xfd|can0|spi"
+
+    # 5) Verify Pi 5 UART device nodes used for NMEA0183
+    ls -l /dev/ttyAMA2 /dev/ttyAMA4
+    ```
+    Expected results:
+    - `can0` exists and can be brought `UP`.
+    - `dmesg` shows MCP251xfd initialization without probe errors.
+    - `/dev/ttyAMA2` exists when using MacArthur TX/RX 1 on Raspberry Pi 5.
+6.  **Check SOC Forwarding**:
     Verify that Citadel is listening on TCP `5044` for Beats traffic. Enable `haris_soc_forward_enabled` only if you also want the legacy direct TCP `5045` path.
-6.  **Check Firewall**:
+7.  **Check Firewall**:
     ```bash
     sudo firewall-cmd --state
     sudo firewall-cmd --zone=tailscale --list-all
     ```
-7.  **Access Dashboards**:
+8.  **Access Dashboards**:
     - **Signal K**: `http://<tailscale-hostname>:3000`
 
 ## Security Architecture

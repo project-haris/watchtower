@@ -1,6 +1,7 @@
 - name: PLAYBOOK FOR GROUP 'Edge Devices'
   hosts: vessel_edge
-  remote_user: ansible
+  #emote_user: ansible
+  remote_user: root
   become: true
   vars:
     ansible_become_method: sudo
@@ -9,6 +10,16 @@
     - ../../vars_disabled_roles.yml
     - ../../vars_common_keys.yml
     - ../../vars_common_secrets.yml
+
+  pre_tasks:
+    - name: Remove legacy Tailscale apt source with old keyring path
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/tailscale.list
+        state: absent
+      when:
+        - ansible_os_family == "Debian"
+        - not (disabled_roles.tailscale | default(false))
+      tags: [tailscale]
 
   roles:
     - { role: sysctl, tags: [sysctl], when: not (disabled_roles.sysctl | default(false))}

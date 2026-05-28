@@ -1,0 +1,15 @@
+haris_vessel_id: "VESSEL-ARTHUR"
+haris_vessel_name: "ARTHUR"
+elasticsearch_heap_size: "4g"
+elastic_network_host: 0.0.0.0
+kibana_server_host: 0.0.0.0
+# Node-RED user
+nodered_user: haris
+
+# MacArthur HAT overrides
+haris_openplotter_mode: true
+haris_nmea0183_port: "/dev/ttyAMA2"
+haris_can_boot_config_lines:
+  - "# --- Project Haris MacArthur HAT Config ---"
+  - "dtparam=spi=on"
+  - "dtoverlay=mcp251xfd,spi0-1,interrupt=25"

@@ -1,8 +1,6 @@
 - name: Install required system packages
   apt:
     name:
-      - nodejs
-      - npm
       - python3
       - python3-pip
       - can-utils
@@ -12,6 +10,14 @@
       - gnupg
     state: present
     update_cache: yes
+
+- name: Install Signal K runtime packages
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+  when: haris_manage_signalk | bool
 
 - name: Ensure keyrings directory exists for Filebeat repository
   file:
@@ -79,18 +85,15 @@
   set_fact:
     boot_config_path: "{{ '/boot/firmware/config.txt' if rpi_boot_config_new.stat.exists else '/boot/config.txt' }}"
 
-- name: Add PiCAN-M Overlay to Boot Config (Enables Hardware)
+- name: Add CAN HAT overlay to boot config
   lineinfile:
     path: "{{ boot_config_path }}"
     line: "{{ item }}"
     state: present
     create: yes
-  loop:
-    - "# --- Project Haris PiCAN Config ---"
-    - "dtparam=spi=on"
-    # The line below assumes a standard PiCAN-M (MCP2515). 
-    - "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25"
+  loop: "{{ haris_can_boot_config_lines }}"
   register: boot_config
+  when: haris_manage_can_boot_config | bool
 
 - name: Reboot to load CAN Hardware Overlay
   reboot:
@@ -100,13 +103,16 @@
     pre_reboot_delay: 0
     post_reboot_delay: 30
     test_command: uptime
-  when: boot_config.changed
+  when:
+    - haris_manage_can_boot_config | bool
+    - boot_config.changed
 
 - name: Ensure network interfaces directory exists
   file:
     path: /etc/network/interfaces.d
     state: directory
     mode: '0755'
+  when: haris_manage_can_networking | bool
 
 - name: Enable CAN interface networking
   copy:
@@ -114,7 +120,8 @@
     content: |
       auto can0
       iface can0 inet manual
-        pre-up /sbin/ip link set can0 type can bitrate 250000
+        pre-up /sbin/ip link set can0 type can bitrate {{ haris_can_bitrate }}
         up /sbin/ifconfig can0 up
         down /sbin/ifconfig can0 down
   notify: Restart Network
+  when: haris_manage_can_networking | bool
