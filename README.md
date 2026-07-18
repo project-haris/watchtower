@@ -2,6 +2,10 @@
 
 Watchtower is the Ansible automation repo for Project Haris vessel edge nodes and M-SOC core services. It provisions edge devices, deploys the Haris data collector and Signal K stack, and configures the onshore ELK pipeline that receives `haris_signalk` events.
 
+[![License](https://img.shields.io/github/license/ahmdngi/watchtower?style=flat-square)]()
+[![Language](https://img.shields.io/badge/language-Ansible-blue?style=flat-square)]()
+[![Stars](https://img.shields.io/github/stars/ahmdngi/watchtower?style=flat-square)](https://github.com/ahmdngi/watchtower)
+
 ## Main Playbooks
 
 - `playbooks/group_vessel_edge/main.yml`: vessel edge devices
