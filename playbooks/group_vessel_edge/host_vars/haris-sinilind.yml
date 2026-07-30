@@ -5,3 +5,20 @@ elastic_network_host: 0.0.0.0
 kibana_server_host: 0.0.0.0
 # Node-RED user
 nodered_user: haris
+
+# OpenPlotter manages Signal K and PiCAN hardware setup on this host.
+haris_openplotter_mode: true
+haris_manage_signalk_install: false
+haris_manage_signalk_service: false
+haris_manage_signalk_config: true
+haris_manage_can_boot_config: false
+haris_manage_can_networking: false
+haris_signalk_config_dir: "/home/pi/.signalk"
+
+# OpenPlotter-side PiCAN-M reference values:
+# - CAN interface: can0
+# - MCP2515 overlay: dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25
+# - CAN bitrate: 250000
+# - Common NMEA0183 device: /dev/ttyS0
+# These are documented here for rebuilds, but are not applied by Ansible while
+# haris_openplotter_mode is true.

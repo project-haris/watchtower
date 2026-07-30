@@ -13,7 +13,9 @@ haris_nmea2000_interface: "can0"
 haris_nmea0183_port: "/dev/ttyS0"
 haris_nmea0183_baud: 4800
 haris_openplotter_mode: false
-haris_manage_signalk: "{{ not haris_openplotter_mode }}"
+haris_manage_signalk_install: "{{ not haris_openplotter_mode }}"
+haris_manage_signalk_service: "{{ not haris_openplotter_mode }}"
+haris_manage_signalk_config: "{{ not haris_openplotter_mode }}"
 haris_manage_can_boot_config: "{{ not haris_openplotter_mode }}"
 haris_manage_can_networking: "{{ not haris_openplotter_mode }}"
 haris_can_boot_config_lines:
@@ -25,8 +27,8 @@ haris_can_bitrate: 250000
 # Signal K Settings
 haris_signalk_version: "2.23.0"
 haris_signalk_port: 3000
-haris_signalk_admin_password: "change_me_password"
 haris_signalk_host: "127.0.0.1"
+haris_signalk_config_dir: "{{ haris_home }}/.signalk"
 haris_snapshot_interval: 10
 haris_soc_forward_enabled: false
 haris_soc_log_host: ""

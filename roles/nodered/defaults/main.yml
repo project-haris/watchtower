@@ -1,5 +1,5 @@
-nodered_script_url: https://github.com/node-red/linux-installers/releases/latest/download/update-nodejs-and-nodered-deb
-nodered_script_path: /usr/local/sbin/update-nodejs-and-nodered-deb
+nodered_script_url: https://github.com/node-red/linux-installers/releases/latest/download/install-update-nodered-deb
+nodered_script_path: /usr/local/sbin/install-update-nodered-deb
 nodered_user: haris
 nodered_install_pi_nodes: true
 nodered_enable_service: true

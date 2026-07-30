@@ -14,7 +14,7 @@ Watchtower is the Ansible automation repo for Project Haris vessel edge nodes an
 ## Key Components
 
 - `artis3n.tailscale.machine`: collection role that installs and authenticates Tailscale using `tailscale_authkey`
-- `roles/haris`: deploys Signal K and the `harisd` collector on vessel devices
+- `roles/haris`: deploys Signal K-related vessel settings, the `harisd` collector, and Filebeat on vessel devices
 - `roles/nodered`: installs Node-RED on Debian-based edge devices using the official Node-RED installer
 - `roles/mullvad_browser`: installs Mullvad Browser on Debian-based edge devices from Mullvad's official apt repository
 - `roles/elk_stack`: deploys Elasticsearch, Logstash, and Kibana on core nodes
@@ -78,8 +78,86 @@ ansible-playbook playbooks/group_msoc_core/main.yml -l haris-citadel -t elk_stac
 ## Notes
 
 - The Haris role no longer depends on the Tailscale role. Tailscale is applied explicitly from the playbooks via `artis3n.tailscale.machine`.
-- Signal K is started by a systemd unit that uses `/usr/local/bin/signalk-server` and runs with `HOME={{ haris_home }}`.
+- On non-OpenPlotter hosts, Signal K is started by a systemd unit that uses `/usr/local/bin/signalk-server` and runs with `HOME={{ haris_home }}`.
 - Tailscale auth should be provided as `tailscale_authkey` in your group vars, host vars, or vaulted secrets.
+
+## Changelog
+
+### 2026-07-30
+
+- Split the `haris` role so OpenPlotter hosts can keep hardware and Signal K service ownership separate from repo-managed Signal K `settings.json` values.
+- Updated OpenPlotter vessel host vars for `haris-sinilind` and `haris-arthur`, including live Signal K config path overrides to `/home/pi/.signalk`.
+- Removed unsupported Signal K admin password handling from `settings.json` and clarified that admin/security state is not managed by this repo through that file.
+- Fixed the `nodered` role to use the current upstream installer name and to run the installer as the target runtime user instead of `root`.
+- Fixed a `firewalld` role bug where unmanaged cleanup loops failed when discovery returned an empty list.
+- Added troubleshooting notes for OpenPlotter NodeSource `apt` issues and the Signal K `Unable to sign token: secretOrPrivateKey must have a value` error.
+
+## Troubleshooting
+
+### OpenPlotter Fresh Install: NodeSource `apt update` Failure
+
+On a fresh OpenPlotter Bookworm install, `apt update` may fail because `/etc/apt/sources.list.d/openplotterNodejs.list` points at a NodeSource `bookworm` release path that returns `404`.
+
+Example failing source entry:
+
+```text
+deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main
+```
+
+Example failure:
+
+```text
+Err: https://deb.nodesource.com/node_18.x bookworm Release
+  404 Not Found
+E: The repository 'https://deb.nodesource.com/node_18.x bookworm Release' no longer has a Release file.
+```
+
+Recovery steps:
+
+```bash
+# 1. Install the keyring
+sudo apt-get install -y ca-certificates curl gnupg
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+
+# 2. Write ONE correct source file (node_22.x, not 18.x)
+echo 'deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main' | sudo tee /etc/apt/sources.list.d/openplotterNodejs.list
+
+# 3. Remove any conflicting duplicates or old backups
+sudo rm -f /etc/apt/sources.list.d/nodesource.list
+sudo rm -f /etc/apt/sources.list.d/openplotterNodejs.list.bak
+
+# 4. Update
+sudo apt update
+```
+
+If the issue persists, inspect the active source file directly:
+
+```bash
+cat /etc/apt/sources.list.d/openplotterNodejs.list
+```
+
+### Signal K: `Unable to sign token: secretOrPrivateKey must have a value`
+
+If Signal K shows:
+
+```text
+Unable to sign token: secretOrPrivateKey must have a value
+```
+
+the current Signal K FAQ says to disable or reset security by removing the security strategy block from `settings.json`, which is usually located at `$HOME/.signalk/settings.json`.
+
+Remove this section:
+
+```json
+"security": {
+  "strategy": "./tokensecurity"
+},
+```
+
+If the server is started with the `--securityenabled` argument, remove that as well.
+
+After updating the configuration, restart Signal K.
 
 ## License
 

@@ -11,6 +11,10 @@
   changed_when: false
   failed_when: nodered_user_lookup.rc != 0
 
+- name: Set Node-RED install user home
+  ansible.builtin.set_fact:
+    nodered_user_home: "{{ nodered_user_lookup.stdout.split(':')[5] }}"
+
 - name: Install Node-RED prerequisites
   ansible.builtin.apt:
     name: "{{ nodered_prerequisite_packages }}"
@@ -35,15 +39,20 @@
 - name: Build Node-RED installer arguments
   ansible.builtin.set_fact:
     nodered_installer_args:
-      - --confirm-root
       - --confirm-install
-      - "--nodered-user={{ nodered_user }}"
       - "{{ '--confirm-pi' if nodered_install_pi_nodes else '--skip-pi' }}"
       - "{{ '--node' ~ nodered_nodejs_major }}"
 
 - name: Run official Node-RED installer
   ansible.builtin.command:
     argv: "{{ ['bash', nodered_script_path] + nodered_installer_args }}"
+  become: true
+  become_user: "{{ nodered_user }}"
+  environment:
+    HOME: "{{ nodered_user_home }}"
+    USER: "{{ nodered_user }}"
+    LOGNAME: "{{ nodered_user }}"
+    TERM: dumb
   register: nodered_install
   when: nodered_force_reinstall or nodered_version_check.rc != 0
   changed_when: true

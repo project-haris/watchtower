@@ -4,24 +4,28 @@
     version: "{{ haris_signalk_version }}"
     global: yes
     state: present
+  when: haris_manage_signalk_install | bool
 
 - name: Create Signal K config directory
   file:
-    path: "{{ haris_home }}/.signalk"
+    path: "{{ haris_signalk_config_dir }}"
     state: directory
     owner: "{{ haris_user }}"
     group: "{{ haris_group }}"
+  when: haris_manage_signalk_config | bool
 
 - name: Deploy Signal K Settings
   template:
     src: signalk_settings.json.j2
-    dest: "{{ haris_home }}/.signalk/settings.json"
+    dest: "{{ haris_signalk_config_dir }}/settings.json"
     owner: "{{ haris_user }}"
     group: "{{ haris_group }}"
   notify: Restart Signal K
+  when: haris_manage_signalk_config | bool
 
 - name: Create Signal K Systemd Service
   template:
     src: signalk.service.j2
     dest: /etc/systemd/system/signalk.service
   notify: Restart Signal K
+  when: haris_manage_signalk_service | bool

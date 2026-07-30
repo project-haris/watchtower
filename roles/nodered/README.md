@@ -5,8 +5,8 @@
 This role installs Node-RED on Debian-based edge devices using the official Node-RED Linux installer documented for Raspberry Pi and other Debian systems:
 
 - installs `build-essential`, `curl`, and `git`
-- downloads the official `update-nodejs-and-nodered-deb` installer
-- runs the installer non-interactively for the configured Node-RED user
+- downloads the official `install-update-nodered-deb` installer
+- runs the installer non-interactively as the configured Node-RED user so the upstream script uses the correct home directory and service ownership
 - enables and starts the `nodered` systemd service
 
 ## Requirements
@@ -19,8 +19,8 @@ This role installs Node-RED on Debian-based edge devices using the official Node
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
-| `nodered_script_url` | `"https://github.com/node-red/linux-installers/releases/latest/download/update-nodejs-and-nodered-deb"` | Official Node-RED Debian installer URL |
-| `nodered_script_path` | `"/usr/local/sbin/update-nodejs-and-nodered-deb"` | Where the installer is stored on the host |
+| `nodered_script_url` | `"https://github.com/node-red/linux-installers/releases/latest/download/install-update-nodered-deb"` | Official Node-RED Debian installer URL |
+| `nodered_script_path` | `"/usr/local/sbin/install-update-nodered-deb"` | Where the installer is stored on the host |
 | `nodered_user` | `"haris"` | User account that owns the Node-RED runtime and flows |
 | `nodered_install_pi_nodes` | `true` | Whether to install the Raspberry Pi specific nodes |
 | `nodered_enable_service` | `true` | Enable Node-RED at boot |
@@ -48,4 +48,5 @@ ansible-playbook playbooks/group_vessel_edge/main.yml -l haris-sinilind -t noder
 - This role follows the official Node-RED Raspberry Pi/Debian installer flow from `https://nodered.org/docs/getting-started/raspberrypi`.
 - The official docs currently say the installer ensures Node.js is new enough and installs Node.js 22 LTS when it needs to install Node.js itself.
 - By default, this repo installs Node-RED under the existing `haris` user so its runtime data stays aligned with the rest of the vessel stack.
+- The role intentionally runs the upstream installer as `nodered_user` rather than `root`, because running it as `root` can cause the installer to target `/root` and interfere with an existing system Node.js runtime.
 - If you want to re-run the upstream installer on a host that already has Node-RED, set `nodered_force_reinstall: true`.

@@ -42,6 +42,7 @@ vars_common_all_sshd:
 
 manage_hostname: true
 hostname: "{{ inventory_hostname }}"
+manage_hosts: true
 # not needed since Tailscale is managing the connections
 # manage_resolv: true
 # searchdomain: "tailb05740.ts.net"

@@ -54,24 +54,42 @@ Variables are defined in `defaults/main.yml`. You **must** override the identifi
 | `haris_nmea2000_interface` | `"can0"` | The CAN interface name (usually `can0` for PiCAN-M). |
 | `haris_nmea0183_port` | `"/dev/ttyS0"` | Serial port for NMEA 0183 (PiCAN-M terminal block). |
 | `haris_nmea0183_baud` | `4800` | Baud rate for the serial port (Standard: 4800, HS: 38400). |
-| `haris_openplotter_mode` | `false` | Compatibility mode for OpenPlotter-managed hosts. When `true`, this role does not install/configure Signal K and does not manage CAN boot/network interface files. |
+| `haris_openplotter_mode` | `false` | Compatibility base mode for OpenPlotter-managed hosts. The default derived behavior is to stop managing Signal K install/service and CAN boot/networking, but you can override the split ownership flags below. |
+| `haris_manage_signalk_install` | `{{ not haris_openplotter_mode }}` | Install the Signal K package/runtime. |
+| `haris_manage_signalk_service` | `{{ not haris_openplotter_mode }}` | Create and manage the role-owned `signalk.service` unit. |
+| `haris_manage_signalk_config` | `{{ not haris_openplotter_mode }}` | Manage selected non-security Signal K `settings.json` values such as vessel identity and interface settings. |
+| `haris_manage_can_boot_config` | `{{ not haris_openplotter_mode }}` | Manage Raspberry Pi boot overlay lines for the CAN HAT. |
+| `haris_manage_can_networking` | `{{ not haris_openplotter_mode }}` | Manage `/etc/network/interfaces.d/can0`. |
 | `haris_can_boot_config_lines` | `["# --- Project Haris PiCAN Config ---", "dtparam=spi=on", "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25"]` | Lines written to Raspberry Pi `config.txt` to enable the CAN HAT overlay. Override per host for different HATs. |
 | `haris_can_bitrate` | `250000` | CAN bitrate used in `/etc/network/interfaces.d/can0`. |
 
 ### OpenPlotter Compatibility Mode
 
-Set `haris_openplotter_mode: true` on hosts where OpenPlotter already manages hardware and Signal K.
+Set `haris_openplotter_mode: true` on hosts where OpenPlotter manages hardware. You can then choose whether the role should still manage Signal K configuration.
 
-When this mode is enabled, the role intentionally avoids reconfiguring core OpenPlotter-managed components:
-- Skips Signal K installation and role-managed Signal K service/template tasks (`roles/haris/tasks/signal_k.yml` is not included).
+With the default derived settings for this mode, the role intentionally avoids reconfiguring core OpenPlotter-managed components:
+- Skips Signal K installation and the role-managed `signalk.service`.
 - Skips CAN overlay writes to `/boot/firmware/config.txt` or `/boot/config.txt`.
 - Skips CAN overlay-triggered reboot logic.
 - Skips writing `/etc/network/interfaces.d/can0` and associated `ifupdown` CAN bring-up.
+
+You can now override that default split if you want a hybrid model. For example, this repo currently uses OpenPlotter-managed hardware with Ansible-managed non-security Signal K settings on some hosts:
+
+```yaml
+haris_openplotter_mode: true
+haris_manage_signalk_install: false
+haris_manage_signalk_service: false
+haris_manage_signalk_config: true
+haris_manage_can_boot_config: false
+haris_manage_can_networking: false
+haris_signalk_config_dir: "/home/pi/.signalk"
+```
 
 What still runs in this mode:
 - System/user preparation required by Haris runtime.
 - Haris collector deployment and `harisd` service management.
 - Filebeat installation/config/service management when `haris_filebeat_enabled: true`.
+- Any explicitly enabled split Signal K tasks, such as `haris_manage_signalk_config: true`.
 
 Why this mode exists:
 - OpenPlotter commonly manages CAN, serial/UART, and Signal K through its own tools and package flows.
@@ -80,6 +98,12 @@ Why this mode exists:
 Recommended host vars pattern on OpenPlotter:
 ```yaml
 haris_openplotter_mode: true
+haris_manage_signalk_install: false
+haris_manage_signalk_service: false
+haris_manage_signalk_config: true
+haris_manage_can_boot_config: false
+haris_manage_can_networking: false
+haris_signalk_config_dir: "/home/pi/.signalk"
 haris_nmea0183_port: "/dev/ttyAMA2"   # Pi 5 MacArthur TX/RX 1 (UART2)
 haris_nmea2000_interface: "can0"      # Keep aligned with OpenPlotter CAN interface name
 ```
@@ -122,7 +146,8 @@ For Raspberry Pi 5, a common mapping is:
 
 Current repository example for MacArthur on Raspberry Pi 5:
 - [playbooks/group_vessel_edge/host_vars/haris-arthur.yml](/home/ahmed/maritime/project-haris/watchtower/playbooks/group_vessel_edge/host_vars/haris-arthur.yml) sets `haris_nmea0183_port: "/dev/ttyAMA2"`.
-- The same host example enables `haris_openplotter_mode: true` so OpenPlotter keeps control of Signal K and CAN interface boot/network management.
+- The same host example points `haris_signalk_config_dir` at `/home/pi/.signalk` so OpenPlotter's live Signal K `settings.json` is the one being managed.
+- The same host example enables `haris_openplotter_mode: true` so OpenPlotter keeps control of hardware bring-up while the repo can still manage selected non-security `settings.json` values if desired.
 
 ### Configuration Sources
 
@@ -138,7 +163,9 @@ Current repository example for MacArthur on Raspberry Pi 5:
 | :--- | :--- | :--- |
 | `haris_signalk_version` | `"2.23.0"` | Version of Signal K Server to install. |
 | `haris_signalk_port` | `3000` | Port for the Signal K web interface and API. |
-| `haris_signalk_admin_password` | `"change_me_password"` | **(Required)** Password for the Signal K admin interface. |
+| `haris_signalk_config_dir` | `{{ haris_home }}/.signalk` | Signal K configuration directory containing `settings.json`. Override this on OpenPlotter hosts, for example to `/home/pi/.signalk`. |
+
+Signal K admin credentials are not managed by this role via `settings.json`. Current Signal K security state is stored in `security.json`, and admin user creation/password management should be done through Signal K's supported security flows such as the Admin UI or documented runtime options.
 
 ### SOC Forwarding Configuration
 
@@ -193,11 +220,6 @@ haris_timezone: "UTC"
 
 # Sensor Specifics
 haris_nmea0183_baud: 38400 
-
-# Signal K Security
-haris_signalk_admin_password: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  663864396539666364663166...
 
 # SOC forwarding via Filebeat
 haris_soc_forward_enabled: false
