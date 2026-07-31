@@ -1,0 +1,37 @@
+# General Settings
+haris_vessel_id: "VESSEL-001"
+haris_vessel_name: "Default Vessel"
+haris_timezone: "UTC"
+
+# User/Group
+haris_user: "haris"
+haris_group: "haris"
+haris_home: "/opt/haris"
+
+# NMEA Settings
+haris_nmea2000_interface: "can0"
+haris_nmea0183_port: "/dev/ttyS0"
+haris_nmea0183_baud: 4800
+haris_openplotter_mode: false
+haris_manage_signalk: "{{ not haris_openplotter_mode }}"
+haris_manage_can_boot_config: "{{ not haris_openplotter_mode }}"
+haris_manage_can_networking: "{{ not haris_openplotter_mode }}"
+haris_can_boot_config_lines:
+  - "# --- Project Haris PiCAN Config ---"
+  - "dtparam=spi=on"
+  - "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25"
+haris_can_bitrate: 250000
+
+# Signal K Settings
+haris_signalk_version: "2.23.0"
+haris_signalk_port: 3000
+haris_signalk_admin_password: "change_me_password"
+haris_signalk_host: "127.0.0.1"
+haris_snapshot_interval: 10
+haris_soc_forward_enabled: false
+haris_soc_log_host: ""
+haris_soc_log_port: 5045
+haris_filebeat_enabled: true
+haris_filebeat_logstash_host: "{{ haris_soc_log_host }}"
+haris_filebeat_logstash_port: 5044
+haris_filebeat_log_path: "{{ haris_home }}/logs/signalk_snapshots.jsonl"

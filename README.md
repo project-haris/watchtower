@@ -13,6 +13,7 @@ Watchtower is the Ansible automation repo for Project Haris vessel edge nodes an
 
 ## Key Components
 
+- `guides/`: operational guides for Project Haris (simulator bridge, field checks, MacArthur HAT, OpenPlotter install, data contract, index in `guides/README.md`)
 - `artis3n.tailscale.machine`: collection role that installs and authenticates Tailscale using `tailscale_authkey`
 - `roles/haris`: deploys Signal K-related vessel settings, the `harisd` collector, and Filebeat on vessel devices
 - `roles/haris` (simulator bridge): optional `simulator_bridge.yml` deploys the NMEA HTTP bridge (`http_bridge.py` + `simulator-bridge.service`) and merges the `sim-tcp` Signal K piped provider when `haris_simulator_bridge_enabled: true`
