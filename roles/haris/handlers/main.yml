@@ -3,6 +3,11 @@
     name: signalk
     state: restarted
 
+- name: Restart Simulator Bridge
+  ansible.builtin.service:
+    name: simulator-bridge
+    state: restarted
+
 - name: Restart Haris Service
   ansible.builtin.service:
     name: harisd

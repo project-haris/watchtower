@@ -6,7 +6,8 @@ kibana_server_host: 0.0.0.0
 # Node-RED user
 nodered_user: haris
 
-# MacArthur HAT overrides
+# OpenPlotter mode: OpenPlotter owns hardware + Signal K service; repo manages
+# selected non-security Signal K settings only.
 haris_openplotter_mode: true
 haris_manage_signalk_install: false
 haris_manage_signalk_service: false
@@ -14,8 +15,15 @@ haris_manage_signalk_config: true
 haris_manage_can_boot_config: false
 haris_manage_can_networking: false
 haris_signalk_config_dir: "/home/pi/.signalk"
+
+# MacArthur HAT overrides
 haris_nmea0183_port: "/dev/ttyAMA2"
 haris_can_boot_config_lines:
   - "# --- Project Haris MacArthur HAT Config ---"
   - "dtparam=spi=on"
   - "dtoverlay=mcp251xfd,spi0-1,interrupt=25"
+
+# Simulator HTTP bridge (bench NMEA 0183 over URL) — verified 2026-07-31.
+# Requires the `funnel` node attribute in the tailnet policy (admin console, one-time).
+haris_simulator_bridge_enabled: true
+haris_simulator_funnel_enabled: true

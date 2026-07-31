@@ -37,3 +37,12 @@ haris_filebeat_enabled: true
 haris_filebeat_logstash_host: "{{ haris_soc_log_host }}"
 haris_filebeat_logstash_port: 5044
 haris_filebeat_log_path: "{{ haris_home }}/logs/signalk_snapshots.jsonl"
+
+# Simulator HTTP Bridge (bench NMEA 0183 over URL -> Signal K TcpProvider)
+# Verified against signalk-server 2.30.0 (OpenPlotter). See project-haris skill:
+# references/simulator-http-bridge-setup.md
+haris_simulator_bridge_enabled: false
+haris_simulator_bridge_http_port: 8080
+haris_simulator_bridge_tcp_port: 10130
+haris_simulator_funnel_enabled: false
+haris_simulator_firewall_open: false

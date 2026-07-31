@@ -15,6 +15,7 @@ Watchtower is the Ansible automation repo for Project Haris vessel edge nodes an
 
 - `artis3n.tailscale.machine`: collection role that installs and authenticates Tailscale using `tailscale_authkey`
 - `roles/haris`: deploys Signal K-related vessel settings, the `harisd` collector, and Filebeat on vessel devices
+- `roles/haris` (simulator bridge): optional `simulator_bridge.yml` deploys the NMEA HTTP bridge (`http_bridge.py` + `simulator-bridge.service`) and merges the `sim-tcp` Signal K piped provider when `haris_simulator_bridge_enabled: true`
 - `roles/nodered`: installs Node-RED on Debian-based edge devices using the official Node-RED installer
 - `roles/mullvad_browser`: installs Mullvad Browser on Debian-based edge devices from Mullvad's official apt repository
 - `roles/elk_stack`: deploys Elasticsearch, Logstash, and Kibana on core nodes
@@ -80,8 +81,15 @@ ansible-playbook playbooks/group_msoc_core/main.yml -l haris-citadel -t elk_stac
 - The Haris role no longer depends on the Tailscale role. Tailscale is applied explicitly from the playbooks via `artis3n.tailscale.machine`.
 - On non-OpenPlotter hosts, Signal K is started by a systemd unit that uses `/usr/local/bin/signalk-server` and runs with `HOME={{ haris_home }}`.
 - Tailscale auth should be provided as `tailscale_authkey` in your group vars, host vars, or vaulted secrets.
+- The simulator HTTP bridge (bench NMEA 0183 over URL) is enabled per host with `haris_simulator_bridge_enabled: true`. It deploys a Python hub (HTTP `:8080` → TCP `:10130`) and merges the `sim-tcp` NMEA0183 piped provider into Signal K settings. Tailscale Funnel (`haris_simulator_funnel_enabled: true`) exposes the bridge publicly at `https://<host>.<tailnet>.ts.net/` — **requires the `funnel` node attribute in the tailnet policy file (admin console, one-time)** and is world-public; tear down with `sudo tailscale funnel reset` when not in use. Full architecture and pitfalls: the `project-haris` skill, `references/simulator-http-bridge-setup.md`.
 
 ## Changelog
+
+### 2026-07-31
+
+- Added optional simulator HTTP bridge to the `haris` role: `simulator_bridge.yml` deploys `http_bridge.py` (HTTP `:8080` → TCP `:10130` with replay-on-connect), a `simulator-bridge` systemd unit, and idempotently merges the `sim-tcp` NMEA0183 piped provider (`suppress0183event: true`) into Signal K settings — without overwriting OpenPlotter-managed config. Enabled via `haris_simulator_bridge_enabled` (set on haris-arthur).
+- Added optional Tailscale Funnel enablement (`haris_simulator_funnel_enabled`) — issues cert + `tailscale funnel --bg`; requires the `funnel` node attribute in the tailnet policy.
+- Verified end-to-end on haris-arthur: simulator → public Funnel URL → hub → Signal K → harisd → ELK (signalk-server 2.30.0).
 
 ### 2026-07-30
 

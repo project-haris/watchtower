@@ -1,0 +1,12 @@
+[Unit]
+Description=Haris Simulator HTTP Bridge (NMEA 0183 -> Signal K)
+After=network-online.target signalk.service
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 {{ haris_home }}/http_bridge.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

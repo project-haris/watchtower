@@ -180,6 +180,32 @@ Signal K admin credentials are not managed by this role via `settings.json`. Cur
 | `haris_filebeat_logstash_port` | `5044` | Destination Beats port on the M-SOC Logstash host. |
 | `haris_filebeat_log_path` | `{{ haris_home }}/logs/signalk_snapshots.jsonl` | JSONL log file tailed by Filebeat. |
 
+### Simulator HTTP Bridge (bench NMEA 0183 over URL)
+
+Enables a bench simulator (or any HTTP POST source of NMEA 0183 lines) to stream into
+Signal K without CAN hardware, tailnet membership, or firewall changes. Architecture:
+
+```text
+simulator → https://<host>.<tailnet>.ts.net/ (Tailscale Funnel, optional)
+  → hub HTTP :8080 → hub TCP :10130 (replay last 10 on connect)
+  → Signal K pipedProvider "sim-tcp" (TcpProvider client) → model → harisd → ELK
+```
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `haris_simulator_bridge_enabled` | `false` | Deploy the hub script, `simulator-bridge` systemd unit, and merge the `sim-tcp` piped provider into Signal K settings. |
+| `haris_simulator_bridge_http_port` | `8080` | HTTP POST port the simulator targets. |
+| `haris_simulator_bridge_tcp_port` | `10130` | TCP port Signal K's `TcpProvider` dials (hub listener). |
+| `haris_simulator_funnel_enabled` | `false` | Issue the Tailscale cert and run `tailscale funnel --bg` to expose the bridge publicly. **Requires the `funnel` node attribute in the tailnet policy (admin console, one-time).** |
+| `haris_simulator_firewall_open` | `false` | Open the HTTP port in firewalld — only needed when the simulator is on the same LAN and NOT using Funnel/tailnet. |
+
+Pitfalls encoded in the merge script (`files/merge_sim_tcp_provider.py`) and hub
+(`files/http_bridge.py`): the legacy Signal K TCP input port 10110 is orphaned in
+signalk-server 2.30 (accepts but never processes), the working input mechanism is the
+`TcpProvider` piped provider (Signal K dials OUT), `suppress0183event: true` is required,
+and sentences need CRLF + a `$` prefix. Full reference: the `project-haris` skill,
+`references/simulator-http-bridge-setup.md`.
+
 ## Dependencies
 
 None.

@@ -1,0 +1,64 @@
+---
+# Simulator HTTP bridge (bench NMEA 0183 over URL).
+# Runs only when haris_simulator_bridge_enabled is true (see defaults/main.yml).
+# Architecture + pitfalls: project-haris skill, references/simulator-http-bridge-setup.md
+
+- name: Set Signal K settings path for simulator bridge
+  ansible.builtin.set_fact:
+    sim_bridge_sk_settings: "{{ haris_signalk_config_dir | default(haris_home + '/.signalk', true) }}/settings.json"
+
+- name: Deploy Simulator HTTP Bridge script
+  ansible.builtin.copy:
+    src: http_bridge.py
+    dest: "{{ haris_home }}/http_bridge.py"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy Simulator Bridge systemd unit
+  ansible.builtin.template:
+    src: simulator-bridge.service.j2
+    dest: /etc/systemd/system/simulator-bridge.service
+  notify: Restart Simulator Bridge
+
+- name: Merge sim-tcp NMEA0183 piped provider into Signal K settings
+  ansible.builtin.script:
+    cmd: merge_sim_tcp_provider.py {{ sim_bridge_sk_settings }} {{ haris_simulator_bridge_tcp_port }}
+    executable: /usr/bin/python3
+  register: sim_provider_merge
+  changed_when: sim_provider_merge.rc == 0
+  failed_when: sim_provider_merge.rc not in [0, 3]
+  notify: Restart Signal K
+
+- name: Enable Simulator Bridge service
+  ansible.builtin.service:
+    name: simulator-bridge
+    enabled: yes
+    state: started
+
+- name: Open simulator bridge HTTP port (LAN fallback only)
+  ansible.posix.firewalld:
+    port: "{{ haris_simulator_bridge_http_port }}/tcp"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  when: haris_simulator_firewall_open | bool
+
+# Tailscale Funnel: requires the node to have the `funnel` node attribute in the
+# tailnet policy (admin console / policy file) and outbound internet. One-time grant;
+# the ACL change is NOT managed by this repo.
+- name: Get Tailscale DNS name for Funnel
+  ansible.builtin.command: tailscale status --json
+  register: ts_status
+  changed_when: false
+  when: haris_simulator_funnel_enabled | bool
+
+- name: Issue Tailscale Funnel certificate
+  ansible.builtin.command: "tailscale cert {{ (ts_status.stdout | from_json).Self.DNSName | trim }}"
+  changed_when: false
+  when: haris_simulator_funnel_enabled | bool
+
+- name: Enable Tailscale Funnel (background, persists in tailscaled)
+  ansible.builtin.command: "tailscale funnel --bg --yes {{ haris_simulator_bridge_http_port }}"
+  changed_when: false
+  when: haris_simulator_funnel_enabled | bool
