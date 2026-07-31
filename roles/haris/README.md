@@ -73,13 +73,20 @@ With the default derived settings for this mode, the role intentionally avoids r
 - Skips CAN overlay-triggered reboot logic.
 - Skips writing `/etc/network/interfaces.d/can0` and associated `ifupdown` CAN bring-up.
 
-You can now override that default split if you want a hybrid model. For example, this repo currently uses OpenPlotter-managed hardware with Ansible-managed non-security Signal K settings on some hosts:
+You can override that default split, but be careful: on OpenPlotter hosts `settings.json`
+is OpenPlotter-owned and contains live piped providers (gps, can0, ...), security, and ssl.
+The role's `signalk_settings.json.j2` is a minimal skeleton — templating it over
+OpenPlotter's file **drops all of that**. The safe repo touch on OpenPlotter hosts is the
+idempotent `sim-tcp` merge from `simulator_bridge.yml` (gated by
+`haris_simulator_bridge_enabled`), which preserves everything else. This repo currently
+sets `haris_manage_signalk_config: false` on its OpenPlotter hosts (haris-sinilind,
+haris-arthur).
 
 ```yaml
 haris_openplotter_mode: true
 haris_manage_signalk_install: false
 haris_manage_signalk_service: false
-haris_manage_signalk_config: true
+haris_manage_signalk_config: false   # do NOT template OpenPlotter-owned settings.json
 haris_manage_can_boot_config: false
 haris_manage_can_networking: false
 haris_signalk_config_dir: "/home/pi/.signalk"
@@ -100,7 +107,7 @@ Recommended host vars pattern on OpenPlotter:
 haris_openplotter_mode: true
 haris_manage_signalk_install: false
 haris_manage_signalk_service: false
-haris_manage_signalk_config: true
+haris_manage_signalk_config: false   # OpenPlotter owns settings.json
 haris_manage_can_boot_config: false
 haris_manage_can_networking: false
 haris_signalk_config_dir: "/home/pi/.signalk"

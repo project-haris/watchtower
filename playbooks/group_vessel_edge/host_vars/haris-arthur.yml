@@ -6,12 +6,14 @@ kibana_server_host: 0.0.0.0
 # Node-RED user
 nodered_user: haris
 
-# OpenPlotter mode: OpenPlotter owns hardware + Signal K service; repo manages
-# selected non-security Signal K settings only.
+# OpenPlotter mode: OpenPlotter owns hardware + Signal K service AND settings.json.
+# The repo must NOT template settings.json here (the skeleton drops OpenPlotter's
+# piped providers, security, ssl). The simulator bridge merge (sim-tcp) is the only
+# repo touch on this file.
 haris_openplotter_mode: true
 haris_manage_signalk_install: false
 haris_manage_signalk_service: false
-haris_manage_signalk_config: true
+haris_manage_signalk_config: false
 haris_manage_can_boot_config: false
 haris_manage_can_networking: false
 haris_signalk_config_dir: "/home/pi/.signalk"

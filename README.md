@@ -89,6 +89,8 @@ ansible-playbook playbooks/group_msoc_core/main.yml -l haris-citadel -t elk_stac
 
 - Added optional simulator HTTP bridge to the `haris` role: `simulator_bridge.yml` deploys `http_bridge.py` (HTTP `:8080` → TCP `:10130` with replay-on-connect), a `simulator-bridge` systemd unit, and idempotently merges the `sim-tcp` NMEA0183 piped provider (`suppress0183event: true`) into Signal K settings — without overwriting OpenPlotter-managed config. Enabled via `haris_simulator_bridge_enabled` (set on haris-arthur).
 - Added optional Tailscale Funnel enablement (`haris_simulator_funnel_enabled`) — issues cert + `tailscale funnel --bg`; requires the `funnel` node attribute in the tailnet policy.
+- **Fix**: on OpenPlotter hosts, `haris_manage_signalk_config` is now `false` (haris-sinilind + haris-arthur). The role's settings template is a minimal skeleton and would drop OpenPlotter's piped providers, security, and ssl if applied to `/home/pi/.signalk/settings.json`. OpenPlotter-owned settings are only touched by the idempotent `sim-tcp` merge.
+- **Fix**: Funnel enablement is a single shell task (`check_mode: false`) — the earlier `from_json`-based version broke under `--check` because command output is unavailable in check mode.
 - Verified end-to-end on haris-arthur: simulator → public Funnel URL → hub → Signal K → harisd → ELK (signalk-server 2.30.0).
 
 ### 2026-07-30

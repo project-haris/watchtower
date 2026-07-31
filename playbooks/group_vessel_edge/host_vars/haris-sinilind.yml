@@ -7,10 +7,12 @@ kibana_server_host: 0.0.0.0
 nodered_user: haris
 
 # OpenPlotter manages Signal K and PiCAN hardware setup on this host.
+# settings.json is OpenPlotter-owned — the repo must NOT template it (the skeleton
+# would drop OpenPlotter's piped providers, security, ssl).
 haris_openplotter_mode: true
 haris_manage_signalk_install: false
 haris_manage_signalk_service: false
-haris_manage_signalk_config: true
+haris_manage_signalk_config: false
 haris_manage_can_boot_config: false
 haris_manage_can_networking: false
 haris_signalk_config_dir: "/home/pi/.signalk"
