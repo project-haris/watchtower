@@ -53,7 +53,7 @@
 - name: Enable Tailscale Funnel (cert + funnel --bg)
   ansible.builtin.shell: |
     set -e
-    DNS=$(tailscale status --json | python3 -c "import sys,json;print(json.load(sys.stdin)['Self']['DNSName'])")
+    DNS=$(tailscale status --json | python3 -c "import sys,json;print(json.load(sys.stdin)['Self']['DNSName'].rstrip('.'))")
     tailscale cert "$DNS"
     tailscale funnel --bg --yes {{ haris_simulator_bridge_http_port }}
   args:
