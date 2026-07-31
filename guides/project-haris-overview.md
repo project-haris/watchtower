@@ -38,7 +38,7 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine_haris
 - **Language:** YAML (Ansible)
 - **Full reference:** `~/wiki/projects/watchtower.md`
 - **Inventory:** `hosts` — 4 nodes across 2 groups:
-  - `[vessel_edge]`: `haris-sinilind` (PiCAN-M, 100.109.79.60), `haris-arthur` (McArthur HAT, 100.127.13.61)
+  - `[vessel_edge]`: `haris-sinilind` (PiCAN-M, 100.77.88.72), `haris-arthur` (McArthur HAT, 100.127.13.61)
   - `[msoc_core]`: `haris-citadel` (ELK+Zabbix, 100.126.59.101), `haris-gateway` (100.105.105.88)
 - **Playbooks:**
   - `playbooks/group_vessel_edge/main.yml` — Vessel edge provisioning (Debian). Roles: sysctl, users_groups, sshd, soft_apt, mullvad_browser, firewalld, resolv_hosts, tailscale (artis3n), cron, **haris**, nodered, chrony, zabbix_agent
