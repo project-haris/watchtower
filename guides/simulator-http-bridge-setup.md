@@ -96,13 +96,45 @@ Script: `references/simulator-http-bridge.py` in this skill. Deployed at
 ```bash
 sudo tee /opt/haris/http_bridge.py > /dev/null <<'EOF'
 #!/usr/bin/env python3
-"""Haris NMEA hub: HTTP POST :8080 (funnel) -> broadcast + replay to TCP clients :10130 (Signal K TcpProvider)"""
-import threading, socketserver, collections
+"""Haris NMEA hub: HTTP POST :8080 (funnel) -> broadcast + replay to TCP clients :10130 (Signal K TcpProvider)
+
+v2: raw stream capture to /opt/haris/raw/nmea_raw.log (ISO-UTC timestamped, 50MB rotate, keep 2) + SO_REUSEADDR.
+"""
+import threading, socketserver, collections, os, datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
+
+RAW_DIR = "/opt/haris/raw"
+RAW_LOG = os.path.join(RAW_DIR, "nmea_raw.log")
+RAW_MAX_BYTES = 50 * 1024 * 1024
+RAW_KEEP = 2
 
 clients = []
 recent = collections.deque(maxlen=10)
 lock = threading.Lock()
+
+def raw_rotate():
+    try:
+        if os.path.exists(RAW_LOG) and os.path.getsize(RAW_LOG) >= RAW_MAX_BYTES:
+            for i in range(RAW_KEEP, 0, -1):
+                src = RAW_LOG if i == 1 else RAW_LOG + "." + str(i - 1)
+                dst = RAW_LOG + "." + str(i)
+                if os.path.exists(src):
+                    if os.path.exists(dst):
+                        os.remove(dst)
+                    os.rename(src, dst)
+    except Exception:
+        pass
+
+def raw_write(line):
+    try:
+        if not os.path.isdir(RAW_DIR):
+            os.makedirs(RAW_DIR, exist_ok=True)
+        raw_rotate()
+        ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        with open(RAW_LOG, "a") as f:
+            f.write(ts + " " + line.rstrip("\r\n") + "\n")
+    except Exception:
+        pass
 
 def send_to(conn, line):
     try:
@@ -113,6 +145,7 @@ def send_to(conn, line):
 def broadcast(line):
     with lock:
         recent.append(line)
+        raw_write(line)
         for c in list(clients):
             send_to(c, line)
 
@@ -148,11 +181,18 @@ class HttpHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"ok")
     def log_message(self, *a): pass
 
-tcp = socketserver.ThreadingTCPServer(("0.0.0.0", 10130), TcpHandler)
-tcp.daemon_threads = True
+class ReuseTCPServer(socketserver.ThreadingTCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+class ReuseHTTPServer(HTTPServer):
+    allow_reuse_address = True
+
+tcp = ReuseTCPServer(("0.0.0.0", 10130), TcpHandler)
 threading.Thread(target=tcp.serve_forever, daemon=True).start()
-print("hub up: HTTP :8080 -> TCP :10130 (replay last 10)", flush=True)
-HTTPServer(("0.0.0.0", 8080), HttpHandler).serve_forever()
+print("hub up: HTTP :8080 -> TCP :10130 (replay last 10) | raw -> " + RAW_LOG, flush=True)
+httpd = ReuseHTTPServer(("0.0.0.0", 8080), HttpHandler)
+httpd.serve_forever()
 EOF
 ```
 
@@ -308,6 +348,7 @@ curl -sk -u elastic:<pw> "https://127.0.0.1:9200/haris-signalk-*/_search?q=vesse
 | Bad checksum → silent drop | NMEA checksum validation | Verify with python XOR; fix the sentence |
 | Delta parsed but never lands | `app.emit('nmea0183')` path in the wrapper can abort before push | `suppress0183event: true` |
 | System clock reset to `2019-09-13 06:00:00` every ~60s; Zabbix "clock out of sync"; chrony Stratum 0 with all sources `^?` | **`@signalk/set-system-time` plugin enabled** — reads time from Signal K data and runs `sudo date -u -s '<value>'` every `interval` s (default 60). On the bench the value is the **simulator's hardcoded GPS date**, so it fights chrony: plugin sets 2019 → chrony rejects 7-year offset (`maxupdateskew 100.0`) → no sync. RTC stays correct, making it look like a boot/RTC problem | Disable the plugin: edit `/home/pi/.signalk/plugin-config-data/set-system-time.json` → `"enabled": false`, then `sudo systemctl restart signalk` (the running plugin keeps firing until restart — config file change alone is not enough). Restore clock with `sudo hwclock --hctosys` (RTC is correct). `pi ALL=(ALL) NOPASSWD: ALL` (OpenPlotter default) is what lets the JS plugin run `sudo date` unchecked. Keep the plugin disabled whenever the simulator feeds fake time; it is only legit with a real GPS |
+| Hub restart fails: `OSError: [Errno 98] Address already in use` on :10130 | Signal K TcpProvider reconnect loop leaves server-side **TIME_WAIT** sockets on :10130; v1's `ThreadingTCPServer` had no `SO_REUSEADDR` so rebind fails until TIME_WAIT ages out (~60s) | v2 uses `ReuseTCPServer`/`ReuseHTTPServer` with `allow_reuse_address = True` **as class attributes** (setting it on the instance after construction is too late — the bind happens in `__init__`). Symptom can also be confirmed via `ss -tanp \| grep 10130` showing TIME-WAIT |
 | `tailscale funnel` shows "Success" then `No serve config` | Foreground mode; Ctrl+C tears it down | `--bg` |
 | `SSL_ERROR_SYSCALL` on public URL | Cert not provisioned yet | `sudo tailscale cert <url>` once |
 | `.navigation` null in API root | Wrong path — data lives at `.vessels[<uuid>]`; `.self` has a `vessels.` prefix | jq with `sub("vessels\\."; "")` |

@@ -4,6 +4,13 @@ All notable changes to watchtower (Project Haris Ansible automation).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-08-03
+
+### Changed
+- `guides/scripts/http_bridge.py` (hub) → v2: raw NMEA stream capture to `/opt/haris/raw/nmea_raw.log` (ISO-UTC timestamped, 50 MB rotate, keep 2) + `allow_reuse_address=True` on both servers (fixes EADDRINUSE on restart caused by Signal K TcpProvider TIME_WAIT sockets).
+- `guides/simulator-http-bridge-setup.md`: v2 script inline, new pitfall row for hub restart EADDRINUSE / TIME_WAIT.
+- `guides/simulator-connection-checklist.md`: `set-system-time` clock pitfall (from 0.6.0, included here for completeness).
+
 ## [0.6.0] - 2026-08-03
 
 ### Docs
