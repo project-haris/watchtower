@@ -136,6 +136,7 @@ Use when the simulator cannot do CAN but can POST raw NMEA 0183 text lines to a 
 5. Verify end-to-end: inject `echo '$IIRMC,...' | nc 127.0.0.1 10110`, then `curl -s http://127.0.0.1:3000/signalk/v1/api/vessels/self | jq '.navigation.position'` → expect populated lat/lon.
 
 Pitfalls (all hit in the field):
+- **Clock stuck at 2019-09-13 06:00 / chrony never syncs (bench sim)**: `@signalk/set-system-time` plugin (enabled by default with `interval: 60, sudo: true`) reads time from Signal K data and runs `sudo date -u -s '<value>'` every 60s. With the simulator feeding a hardcoded GPS date, it resets the system clock to 2019 every minute; chrony rejects the 7-year offset (`maxupdateskew 100.0`) so all NTP sources go `^?` and Stratum stays 0. RTC remains correct, so it masquerades as a boot/RTC fault. Fix: `"enabled": false` in `/home/pi/.signalk/plugin-config-data/set-system-time.json` + `sudo systemctl restart signalk` (restart required — config change alone doesn't stop the running plugin) + `sudo hwclock --hctosys` to restore the clock. Zabbix then clears its time-sync alert on next poll. Only legit with a real GPS source.
 - **Checksums**: test sentences MUST have valid NMEA checksums — Signal K silently drops bad ones, leaving `.navigation.position` null. Verify any sentence with:
   `python3 -c "s='...';print(hex(__import__('functools').reduce(lambda a,b:a^ord(b),s,0)).upper()[2:])"`
 - **Stale dates**: RMC with an old date (e.g. 1994) may be dropped; use a current DDMMYY.
