@@ -111,6 +111,24 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine_haris
 - **Package:** ee.haris.crew, minSdk 26
 - **Docs:** docs/ARCHITECTURE.md — full architecture document
 
+### 6. `haris-command-center` — Real-Time Monitoring Dashboard
+
+- **Path:** `/root/git-repos-personal/haris-command-center/`
+- **Repo:** https://github.com/ahmdngi/haris-command-center (**PRIVATE** — `config.py` contains real ES passwords + node IPs; do not make public without scrubbing creds to env vars)
+- **Language:** Python (Flask), vanilla JS, SSE, Leaflet 1.9.4
+- **Purpose:** real-time monitoring dashboard for the full Haris M-SOC — 17 collectors polling 4 Tailscale nodes every 10s, streaming via SSE
+- **Run:** `cd /root/git-repos-personal/haris-command-center && source venv/bin/activate && HOME=/root python3 app.py` → `http://100.72.133.89:5001` (must set `HOME=/root` or SSH key resolution breaks)
+- **Collectors:** Node, Elastic, Logstash, Pipeline, SignalK, Zabbix, Honeypot, Nmea, Tailscale, ZabbixAlert, DataFlow, FlapDetector, Filebeat, Hardware, HoneypotDetail, EsLifecycle, LogstashErrors
+- **Key design decisions:**
+  - SSH via `subprocess` (paramiko rejects Tailscale SSH "none" auth)
+  - Logstash `:9600` is localhost-only on citadel → collectors SSH + curl localhost
+  - ES search via SSH with `elastic` user (`kibana_system` can health/cat only); elastic pw from `/root/elastic` on citadel
+  - NMEA collector reads `:10130` (hub TCP broadcast), NOT `:10110` (orphaned in signalk 2.30)
+  - Leaflet CDN links must NOT get SRI hashes (wrong hashes block loading)
+  - Cache-busting: bump `?v=` on static files (css v5, sse v3, ui v7, core v5)
+- **⚠️ Known bug (2026-08-04):** `collectors/signalk_collector.py` calls `/signalk/v1/api/vessels/self` — **404s on signalk-server 2.30**; vessel telemetry panel + position map show nulls. Fix: API root + `.vessels[<uuid>]` resolution (mirror harisd's fallback). Rest of dashboard works.
+- **Release:** v0.3.0 (Leaflet vessel map + track), pushed 2026-08-04, branch `main`.
+
 ## NMEA 0183 → Signal K Ingestion
 
 Feeding external NMEA 0183 (simulators, bench rigs) into Signal K. **Full guide: `references/nmea-signalk-ingestion.md`** (field-verified on arthur bench, 2026-07/08).
