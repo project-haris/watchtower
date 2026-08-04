@@ -111,6 +111,25 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine_haris
 - **Package:** ee.haris.crew, minSdk 26
 - **Docs:** docs/ARCHITECTURE.md — full architecture document
 
+## NMEA 0183 → Signal K Ingestion
+
+Feeding external NMEA 0183 (simulators, bench rigs) into Signal K. **Full guide: `references/nmea-signalk-ingestion.md`** (field-verified on arthur bench, 2026-07/08).
+
+- **Key fact (signalk-server 2.30):** the working TCP input is a pipedProvider whose TcpProvider *dials out*; port 10110 is orphaned. Use `providers/simple` + `subOptions: {type: tcp, suppress0183event: true}` (config: `references/simulator-http-bridge-setup.md` §4).
+- **Hub**: `references/simulator-http-bridge.py` (v3) — HTTP :8080 → TCP :10130 broadcast + replay deque(10), strips junk before `$`, appends CRLF, **rewrites stale RMC DDMMYY dates + recomputes checksums** (`fix_rmc_date`).
+- **Pitfalls**: bad checksums drop silently; stale-dated RMC never promotes (sim's real position hides in `navigation.position.values.<source>`); TIME_WAIT on :10130 → `allow_reuse_address = True` as class attribute.
+- **Ansible**: never template settings.json on OpenPlotter hosts (`haris_manage_signalk_config: false`); trailing-dot on `tailscale status --json` DNSName; check-mode traps; funnel node attribute is admin-console-only.
+- **Refs**: `references/rmc-date-freshness-fix.md`, `references/elk-arrival-verification.md`, `references/rpi5-serial-and-monitoring-gotchas.md`, `references/signalk-set-system-time-pitfall.md`, `scripts/verify_rmc_date_fix.py`, `scripts/signalk-data-watchdog.sh` (10-min data watchdog — cron job `arthur-data-watchdog`).
+
+## Explainer Video Production
+
+Remotion motion graphics video (1920×1080, 30fps, 30s, 5 acts) explaining Project Haris — PiCAN-M and MacArthur HAT data flows. **Full spec: `references/haris-explainer-video.md`** (scaffold command, project structure, per-act frame ranges, color palette, composition).
+
+## Related Skills (kept separate — load on demand)
+
+- `vnc-remote-access` (devops) — VNC to headless Pi/OpenPlotter hosts: RealVNC auth without cloud sign-in (`Authentication=VncAuth`, `Encryption=PreferOff`), X11-vs-Wayland trap (RealVNC can't capture Wayland — use `LXDE-pi-x`), lightdm autologin, client troubleshooting (TigerVNC, macOS Screen Sharing).
+- `tailscale-funnel-serve` (devops) — expose local services publicly or tailnet-only via Tailscale Funnel/Serve: ACL `nodeAttrs` prerequisite, `--bg` persistence, cert, verification, teardown (`tailscale funnel reset`).
+
 ## References
 
 - `references/crew-app-signalk-data-contract.md` — Exact Signal K delta format, WebSocket subscription flow, and supported paths for the Haris Crew App's data ingestion layer. Use when building synthetic AIS sources or debugging crew app connectivity.
@@ -120,9 +139,15 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine_haris
 - `references/watchtower-haris-role-defaults.yml` — All `haris` role variables with defaults and descriptions.
 - `references/openplotter-install.md` — OpenPlotter v4.x.x installation reference for haris-arthur (McArthur HAT RPi5). OS: Debian 12 Bookworm. Download links for Headless and Starting editions.
 - `references/simulator-http-bridge-setup.md` — **Complete simulator→Haris HTTP bridge setup (verified 2026-07-31)**. Full architecture, Tailscale Funnel (ACL/cert/--bg), hub script + systemd unit, signalk-server 2.30 pipedProvider config, all pitfalls (10110 orphan, TcpProvider client, None prefix, CRLF, suppress0183event), verification + teardown.
-- `references/simulator-http-bridge.py` — Final working hub script (HTTP :8080 → TCP :10130 with replay-on-connect). Deploy to `/opt/haris/http_bridge.py`.
+- `references/simulator-http-bridge.py` — Final working hub script (HTTP :8080 → TCP :10130 with replay-on-connect, v3 with RMC date correction). Deploy to `/opt/haris/http_bridge.py`.
+- `references/nmea-signalk-ingestion.md` — Full NMEA 0183 → Signal K ingestion guide (absorbed from `nmea-signalk-ingestion` skill): architecture, hub, Ansible + Hermes deployment pitfalls, field pitfalls.
+- `references/rmc-date-freshness-fix.md` — RMC stale-date diagnosis + hub `fix_rmc_date` fix and harisd `HARIS_MAX_SIGNAL_AGE` freshness filter (2026-08-04).
+- `references/elk-arrival-verification.md` — Verifying signal data arrival in Elasticsearch (logstash stats, filebeat registry, per-vessel queries).
+- `references/rpi5-serial-and-monitoring-gotchas.md` — RPi5 serial + monitoring pitfalls.
+- `references/signalk-set-system-time-pitfall.md` — Signal K / system time pitfalls.
+- `references/haris-explainer-video.md` — Remotion explainer video spec (absorbed from `haris-explainer-video` skill).
+- **Scripts:** `scripts/verify_rmc_date_fix.py` — end-to-end check of the RMC date fix; `scripts/signalk-data-watchdog.sh` — 10-min arthur data watchdog (silent when healthy, alerts on stale/offline).
 - **Wiki:** `~/wiki/projects/watchtower.md` — Full Ansible automation reference: inventory, playbooks, all roles, templates, common commands.
-- GitHub org: https://github.com/project-haris
 - GitHub org: https://github.com/project-haris
 - License: MIT (all repos)
 - This is research/operational tooling for authorized environments only
