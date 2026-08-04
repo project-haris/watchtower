@@ -15,7 +15,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 RAW_DIR = "/opt/haris/raw"
 RAW_LOG = os.path.join(RAW_DIR, "nmea_raw.log")
 RAW_MAX_BYTES = 50 * 1024 * 1024
-RAW_KEEP = 2
+RAW_KEEP = 999999  # keep ALL raw logs, never delete (Ahmed directive 2026-08-04)
 
 clients = []
 recent = collections.deque(maxlen=10)
