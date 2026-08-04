@@ -59,6 +59,45 @@ def fetch_signalk_snapshot_with_fallback(api_url: str) -> dict:
     return fetch_signalk_snapshot(root_url)
 
 
+def blank_stale_values(payload: dict, max_age_seconds: float) -> dict:
+    """Blank Signal K promoted values whose timestamp is stale.
+
+    Recursively walk the payload. For any dict node that has BOTH 'value' and
+    'timestamp', if the timestamp is older than max_age_seconds, set that node's
+    'value' to None — the model structure is preserved (including per-source
+    'values' maps, which are left untouched) so Elasticsearch never ingests a
+    stale promoted value. 'meta' subtrees are skipped. Unparseable timestamps
+    are ignored (node kept as-is).
+    """
+    now = datetime.now(timezone.utc)
+
+    def walk(node):
+        if isinstance(node, dict):
+            ts = node.get("timestamp")
+            if ts is not None and "value" in node:
+                try:
+                    ts_str = str(ts)
+                    if ts_str.endswith("Z"):
+                        ts_str = ts_str[:-1] + "+00:00"
+                    parsed = datetime.fromisoformat(ts_str)
+                    if parsed.tzinfo is None:
+                        parsed = parsed.replace(tzinfo=timezone.utc)
+                    if (now - parsed).total_seconds() > max_age_seconds:
+                        node["value"] = None
+                except (ValueError, TypeError):
+                    pass  # unparseable timestamp -> keep node as-is
+            for key, value in node.items():
+                if key in ("meta", "values"):
+                    continue
+                walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(payload)
+    return payload
+
+
 def build_event(payload: dict) -> dict:
     return {
         "@timestamp": utc_now(),
@@ -87,6 +126,7 @@ def forward_event(host: str, port: int, event: dict) -> None:
 def main() -> None:
     api_url = os.getenv("HARIS_SIGNALK_API_URL", DEFAULT_API_URL)
     snapshot_interval = float(os.getenv("HARIS_SNAPSHOT_INTERVAL", "10"))
+    max_signal_age = float(os.getenv("HARIS_MAX_SIGNAL_AGE", "30"))
     log_path = os.getenv("HARIS_LOG_PATH", DEFAULT_LOG_PATH)
     forward_enabled = os.getenv("HARIS_SOC_FORWARD_ENABLED", "false").lower() == "true"
     soc_host = os.getenv("HARIS_SOC_LOG_HOST", "")
@@ -95,6 +135,7 @@ def main() -> None:
     logger.info("Starting Haris Signal K forwarder")
     logger.info("Signal K API: %s", api_url)
     logger.info("Local JSONL log: %s", log_path)
+    logger.info("Max signal value age: %s s", max_signal_age)
     if forward_enabled:
         logger.info("SOC forwarding enabled to %s:%s", soc_host, soc_port)
     else:
@@ -103,6 +144,7 @@ def main() -> None:
     while True:
         try:
             payload = fetch_signalk_snapshot_with_fallback(api_url)
+            payload = blank_stale_values(payload, max_signal_age)
             event = build_event(payload)
             write_jsonl(log_path, event)
 

@@ -1,27 +1,15 @@
 #!/usr/bin/env python3
-"""Haris NMEA hub — v2 (verified 2026-08-03 on haris-arthur).
+"""Haris NMEA hub: HTTP POST :8080 (funnel) -> broadcast + replay to TCP clients :10130 (Signal K TcpProvider)
 
-HTTP POST :8080 (simulator via Tailscale Funnel) -> broadcast + replay to
-TCP clients :10130 (signalk-server TcpProvider pipedProvider).
+v2: raw stream capture — every cleaned NMEA sentence appended to /opt/haris/raw/nmea_raw.log
+with an ISO timestamp. Rotates at RAW_MAX_BYTES (50 MB), keeps RAW_KEEP old files.
 
-v2 changes vs v1:
-1. Raw stream capture: every cleaned NMEA sentence appended to
-   /opt/haris/raw/nmea_raw.log with an ISO-8601 UTC timestamp, one line per
-   sentence. Rotates at 50 MB (keeps 2 old files). This is the ONLY place the
-   full raw stream is persisted — Signal K itself does not record it.
-2. allow_reuse_address=True on both servers. Without it, a restart right after
-   a crash/stop fails with EADDRINUSE because signalk's TcpProvider reconnect
-   loop leaves server-side TIME_WAIT sockets on :10130 and the default
-   ThreadingTCPServer doesn't set SO_REUSEADDR. (v1 hit this 2026-08-03.)
-
-Replay-on-connect is essential: signalk's TcpProvider disconnects after 60s
-without data (TcpStream noDataReceivedTimeout) and reconnects with backoff.
-Replaying the last 10 sentences on every connect guarantees no POST is lost
-to a disconnect window.
-
-Deployed at /opt/haris/http_bridge.py, run as systemd unit `simulator-bridge`.
+v3: RMC date correction — the bench simulator's GPRMC sentences embed a stale date
+(2025-12-10) that Signal K refuses to promote. fix_rmc_date() rewrites the DDMMYY
+field to today's UTC date and recomputes the NMEA checksum before broadcast, so the
+model position always carries a fresh timestamp.
 """
-import threading, socketserver, collections, os, datetime
+import threading, socketserver, collections, os, datetime, time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 RAW_DIR = "/opt/haris/raw"
@@ -72,6 +60,33 @@ def broadcast(line):
         for c in list(clients):
             send_to(c, line)
 
+def fix_rmc_date(line):
+    """Rewrite the DDMMYY date field of RMC sentences to today's UTC date.
+
+    RMC variants ($GPRMC/$GNRMC/$IIRMC/$AIRMC) carry their date in field index 9
+    (fields[0] == '$GPRMC', fields[9] == 'DDMMYY'). The bench simulator embeds a
+    stale date (2025-12-10) so Signal K never promotes the sentence. We replace
+    the date with today's UTC date and RECOMPUTE the NMEA checksum (XOR of the
+    chars between '$' and '*'). Non-RMC sentences pass through unchanged. The
+    caller owns line endings (CRLF appended later).
+    """
+    try:
+        if not line.startswith('$'):
+            return line
+        fields = line.split(',')
+        if len(fields) < 10 or not fields[0].endswith('RMC'):
+            return line
+        fields[9] = datetime.datetime.now(datetime.timezone.utc).strftime('%d%m%y')
+        body = ','.join(fields)
+        star = body.find('*')
+        payload = body if star < 0 else body[:star]
+        ck = 0
+        for ch in payload[1:]:
+            ck ^= ord(ch)
+        return payload + '*' + format(ck, '02X')
+    except Exception:
+        return line
+
 class TcpHandler(socketserver.StreamRequestHandler):
     def handle(self):
         with lock:
@@ -94,11 +109,11 @@ class HttpHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         body = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode(errors="replace")
         if '$' in body:
-            body = body[body.find('$'):]      # strip junk before first $ (sim prepends "None")
+            body = body[body.find('$'):]
         for line in body.splitlines():
             line = line.rstrip()
             if line:
-                broadcast(line + '\r\n')      # CRLF required by Signal K
+                broadcast(fix_rmc_date(line) + '\r\n')   # CRLF required by Signal K
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"ok")
