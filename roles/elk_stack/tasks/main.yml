@@ -250,6 +250,10 @@
         - "haris-signalk-*"
       priority: "{{ haris_signalk_index_template_priority }}"
       template:
+        settings:
+          # Sinilind's full N2K Signal K payload exceeds ES default 1000-field limit
+          # (electrical switches, per-source values, meta blocks) — raised 2026-08-05.
+          index.mapping.total_fields.limit: 10000
         mappings:
           properties:
             "@timestamp":
@@ -280,6 +284,10 @@
         - "haris-signalk-*"
       priority: "{{ haris_signalk_index_template_priority }}"
       template:
+        settings:
+          # Sinilind's full N2K Signal K payload exceeds ES default 1000-field limit
+          # (electrical switches, per-source values, meta blocks) — raised 2026-08-05.
+          index.mapping.total_fields.limit: 10000
         mappings:
           properties:
             "@timestamp":
