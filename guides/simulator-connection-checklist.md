@@ -88,6 +88,8 @@ sudo timeout 10 candump can0
 # Expect: CAN frames scrolling (PGN hex IDs)
 ```
 
+> **Pitfall (candump `-L`)**: to log frames to a file use `candump can0 -L >> file.log` (append). On this can-utils build `-L` means "log file format on **stdout**" and takes NO file argument — `candump can0 -L /path` fails with *"name of CAN device '...' is too long"*. Lowercase `-l` auto-names a file in the CWD. Production capture runs as the `haris-canraw` service — see `references/raw-data-preservation.md`.
+
 ### 3. Signal K — address claim
 ```bash
 journalctl -u signalk --no-pager | grep -i "claimed\|address\|canboat"

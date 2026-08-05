@@ -44,6 +44,8 @@ Fail signs:
 sudo candump can0
 ```
 
+> **Pitfall (candump `-L`)**: to log frames to a file use `candump can0 -L >> file.log` — `-L` outputs "log file format" to **stdout** and takes NO file argument (`candump -L /path` fails with *"name of CAN device ... is too long"*). Production capture: `haris-canraw` service (see `references/raw-data-preservation.md`).
+
 Pass sign:
 - CAN frames scroll when connected to a powered NMEA 2000 network.
 
