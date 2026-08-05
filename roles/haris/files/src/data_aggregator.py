@@ -8,6 +8,7 @@ import socket
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
@@ -98,6 +99,36 @@ def blank_stale_values(payload: dict, max_age_seconds: float) -> dict:
     return payload
 
 
+def prune_payload(payload: dict) -> dict:
+    """Strip static schema and per-source duplicates from a Signal K snapshot.
+
+    Removes every 'meta' block (description/units/formula — static schema shipped
+    in every doc, the main driver of ES field explosion) and every per-source
+    'values' map (duplicates of the promoted value per CAN source). Keeps
+    value/timestamp/$source/pgn per path. Per-frame detail stays archived in the
+    raw CAN capture (haris-canraw), so no data is lost.
+    """
+
+    def walk(node: Any) -> Any:
+        if isinstance(node, dict):
+            out = {}
+            for key, value in node.items():
+                if key in ("meta", "values"):
+                    continue
+                if key == "value":
+                    out[key] = value  # data payload kept verbatim
+                elif isinstance(value, (dict, list)):
+                    out[key] = walk(value)
+                else:
+                    out[key] = value
+            return out
+        if isinstance(node, list):
+            return [walk(item) for item in node]
+        return node
+
+    return walk(payload)
+
+
 def build_event(payload: dict) -> dict:
     return {
         "@timestamp": utc_now(),
@@ -145,6 +176,7 @@ def main() -> None:
         try:
             payload = fetch_signalk_snapshot_with_fallback(api_url)
             payload = blank_stale_values(payload, max_signal_age)
+            payload = prune_payload(payload)
             event = build_event(payload)
             write_jsonl(log_path, event)
 
