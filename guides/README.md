@@ -20,6 +20,8 @@ the `project-haris` Hermes skill — add new guides here going forward.
 | `scripts/http_bridge.py` | The NMEA hub: HTTP POST `:8080` → TCP `:10130` with replay-on-connect. Same content as `roles/haris/files/http_bridge.py` — **the role file is the source of truth for deployment**. |
 | `scripts/data_aggregator.py` | The `harisd` collector: polls the Signal K API, writes JSONL snapshots. Reference copy — deployed from `roles/haris/files/src/data_aggregator.py`. |
 | `references/haris-role-defaults.yml` | Reference snapshot of the `haris` role default variables. |
+| `references/es-field-limit-fix.md` | 2026-08-05 incident: sinilind ES docs missing 2 days — ES 1000-field limit blown by full N2K payload; diagnosis recipe + fix (template/live index → 10000). |
+| `references/raw-data-preservation.md` | Raw NMEA/CAN capture on both Pis (hub `nmea_raw.log` + `haris-canraw` candump), never-delete policy, rotation semantics, candump `-L` gotcha. |
 
 ## How this maps to the skill
 

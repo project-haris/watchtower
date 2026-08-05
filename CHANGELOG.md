@@ -4,6 +4,15 @@ All notable changes to watchtower (Project Haris Ansible automation).
 
 ## [Unreleased]
 
+### Added (2026-08-04/05)
+- `haris` role: raw CAN capture (`canraw.yml`, `haris-canraw.service`, logrotate never-delete) — enabled on sinilind (`haris_canraw_enabled: true`); arthur CAN skipped (no bus connection, ERROR-PASSIVE).
+- `guides/references/es-field-limit-fix.md` + `guides/references/raw-data-preservation.md` (mirrors of project-haris skill refs).
+
+### Changed
+- Hub `RAW_KEEP` 2 → 999999: raw NMEA rotation never deletes (`b452e2b`).
+- `elk_stack`: haris-signalk index template `index.mapping.total_fields.limit` → 10000 — sinilind's full N2K payload exceeded ES default 1000-field limit (`document_parsing_exception`, 866 new fields/doc); docs were 400-rejected since 2026-08-03 15:28Z; fixed live index + template 2026-08-05 (`0898fbf`).
+- `guides/project-haris-overview.md` re-synced with unified skill (raw preservation section + new refs).
+
 ## [0.6.1] - 2026-08-03
 
 ### Changed

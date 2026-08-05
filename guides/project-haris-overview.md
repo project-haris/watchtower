@@ -148,6 +148,14 @@ Remotion motion graphics video (1920×1080, 30fps, 30s, 5 acts) explaining Proje
 - `vnc-remote-access` (devops) — VNC to headless Pi/OpenPlotter hosts: RealVNC auth without cloud sign-in (`Authentication=VncAuth`, `Encryption=PreferOff`), X11-vs-Wayland trap (RealVNC can't capture Wayland — use `LXDE-pi-x`), lightdm autologin, client troubleshooting (TigerVNC, macOS Screen Sharing).
 - `tailscale-funnel-serve` (devops) — expose local services publicly or tailnet-only via Tailscale Funnel/Serve: ACL `nodeAttrs` prerequisite, `--bg` persistence, cert, verification, teardown (`tailscale funnel reset`).
 
+## Raw Data Preservation (never delete)
+
+Policy (Ahmed, 2026-08-04): raw NMEA/CAN logs are NEVER deleted. Full guide: `references/raw-data-preservation.md`.
+
+- **Arthur**: hub raw capture `/opt/haris/raw/nmea_raw.log` — every simulator sentence, `RAW_KEEP=999999` (rotation never deletes). Ground truth for sim trips/sessions.
+- **Sinilind**: `haris-canraw` systemd service — candump can0 → `/opt/haris/raw/can0_raw.log`, logrotate daily + compress + `rotate 9999` (never deletes). ~237 frames/s, ~1 GB/day raw (~100 MB compressed).
+- **Arthur CAN is NOT captured** — can0 ERROR-PASSIVE, 0 frames (no bus connection; only funnel→sim).
+
 ## References
 
 - `references/crew-app-signalk-data-contract.md` — Exact Signal K delta format, WebSocket subscription flow, and supported paths for the Haris Crew App's data ingestion layer. Use when building synthetic AIS sources or debugging crew app connectivity.
@@ -161,6 +169,8 @@ Remotion motion graphics video (1920×1080, 30fps, 30s, 5 acts) explaining Proje
 - `references/nmea-signalk-ingestion.md` — Full NMEA 0183 → Signal K ingestion guide (absorbed from `nmea-signalk-ingestion` skill): architecture, hub, Ansible + Hermes deployment pitfalls, field pitfalls.
 - `references/rmc-date-freshness-fix.md` — RMC stale-date diagnosis + hub `fix_rmc_date` fix and harisd `HARIS_MAX_SIGNAL_AGE` freshness filter (2026-08-04).
 - `references/elk-arrival-verification.md` — Verifying signal data arrival in Elasticsearch (logstash stats, filebeat registry, per-vessel queries).
+- `references/es-field-limit-fix.md` — 2026-08-05 incident: sinilind ES docs missing for 2 days. Root cause: ES 1000-field limit blown by full N2K payload (866 new fields/doc, `document_parsing_exception`). Fix: template + live index → 10000. Includes the full diagnosis recipe and the lesson that logstash in=out≠ES arrival.
+- `references/raw-data-preservation.md` — Raw NMEA/CAN capture on both Pis, never-delete policy, rotation semantics, candump `-L` gotcha, verification commands.
 - `references/rpi5-serial-and-monitoring-gotchas.md` — RPi5 serial + monitoring pitfalls.
 - `references/signalk-set-system-time-pitfall.md` — Signal K / system time pitfalls.
 - `references/haris-explainer-video.md` — Remotion explainer video spec (absorbed from `haris-explainer-video` skill).
