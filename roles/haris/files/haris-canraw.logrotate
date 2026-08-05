@@ -1,0 +1,12 @@
+# Raw CAN capture (haris-canraw) — keep ALL logs, never delete (Ahmed directive 2026-08-04).
+# rotate 9999 with daily = effectively never deletes; compress keeps disk sane
+# (~330 MB/day raw -> ~30-40 MB/day compressed at 237 frames/s).
+/opt/haris/raw/can0_raw.log {
+    daily
+    rotate 9999
+    compress
+    copytruncate
+    missingok
+    notifempty
+    create 0644 haris haris
+}

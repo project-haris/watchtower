@@ -1,0 +1,37 @@
+---
+# Raw CAN frame capture on vessel edge nodes (candump can0 -> haris_home/raw/).
+# Files kept forever (never deleted) — logrotate compresses daily, rotate 9999.
+# Only enable where the CAN bus actually carries N2K traffic (sinilind);
+# arthur's can0 is ERROR-PASSIVE / no bus connection.
+
+- name: Create raw CAN capture directory
+  ansible.builtin.file:
+    path: "{{ haris_home }}/raw"
+    state: directory
+    owner: "{{ haris_user }}"
+    group: "{{ haris_user }}"
+    mode: "0755"
+
+- name: Deploy haris-canraw systemd unit
+  ansible.builtin.copy:
+    src: haris-canraw.service
+    dest: /etc/systemd/system/haris-canraw.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart haris-canraw
+
+- name: Deploy haris-canraw logrotate config
+  ansible.builtin.copy:
+    src: haris-canraw.logrotate
+    dest: /etc/logrotate.d/haris-canraw
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Enable and start haris-canraw
+  ansible.builtin.systemd:
+    name: haris-canraw
+    daemon_reload: true
+    enabled: true
+    state: started

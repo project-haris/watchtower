@@ -8,6 +8,11 @@
     name: simulator-bridge
     state: restarted
 
+- name: Restart haris-canraw
+  ansible.builtin.service:
+    name: haris-canraw
+    state: restarted
+
 - name: Restart Haris Service
   ansible.builtin.service:
     name: harisd

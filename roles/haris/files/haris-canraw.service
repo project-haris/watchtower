@@ -1,0 +1,21 @@
+[Unit]
+Description=Haris raw CAN capture (candump can0 -> /opt/haris/raw/)
+After=network.target
+Wants=network.target
+
+[Service]
+User=haris
+Group=haris
+ExecStart=/bin/sh -c '/usr/bin/candump can0 -L >> /opt/haris/raw/can0_raw.log'
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=haris-canraw
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

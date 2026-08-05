@@ -17,6 +17,9 @@ haris_manage_can_boot_config: false
 haris_manage_can_networking: false
 haris_signalk_config_dir: "/home/pi/.signalk"
 
+# Raw CAN capture on — can0 carries live N2K (PGNs 127250/129029, ~237 f/s at anchor).
+haris_canraw_enabled: true
+
 # OpenPlotter-side PiCAN-M reference values:
 # - CAN interface: can0
 # - MCP2515 overlay: dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25

@@ -46,3 +46,7 @@ haris_simulator_bridge_http_port: 8080
 haris_simulator_bridge_tcp_port: 10130
 haris_simulator_funnel_enabled: false
 haris_simulator_firewall_open: false
+
+# Raw CAN capture (candump -> {{ haris_home }}/raw/, kept forever)
+haris_canraw_enabled: false
+haris_canraw_interface: can0

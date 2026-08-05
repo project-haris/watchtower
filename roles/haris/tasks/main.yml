@@ -18,3 +18,8 @@
   include_tasks: simulator_bridge.yml
   tags: [haris, simulator]
   when: haris_simulator_bridge_enabled | bool
+
+- name: Raw CAN capture
+  include_tasks: canraw.yml
+  tags: [haris, canraw]
+  when: haris_canraw_enabled | bool
