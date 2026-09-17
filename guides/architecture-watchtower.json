@@ -1,0 +1,367 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Watchtower \u2014 Project Haris Fleet Automation",
+    "subtitle": "Ansible: vessel edge nodes and M-SOC core over Tailscale",
+    "output": "guides/architecture-watchtower.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "edge-path",
+        "label": "Vessel edge provisioning",
+        "focus": [
+          "operator",
+          "playbook-edge",
+          "haris-role",
+          "galaxy",
+          "edge-host"
+        ],
+        "note": "The vessel-edge playbook applies common system roles, the haris role stack, and Tailscale to sinilind/arthur."
+      },
+      {
+        "id": "soc-path",
+        "label": "M-SOC core provisioning",
+        "focus": [
+          "operator",
+          "playbook-core",
+          "elk-role",
+          "citadel",
+          "es"
+        ],
+        "note": "The msoc-core playbook deploys ELK and Zabbix on citadel, receiving Beats and harisd events."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "Operator",
+      "sublabel": "ansible-playbook",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        120,
+        60
+      ],
+      "tag": "-D --diff"
+    },
+    {
+      "id": "inventory",
+      "type": "database",
+      "label": "Inventory",
+      "sublabel": "hosts + group_vars",
+      "pos": [
+        40,
+        120
+      ],
+      "size": [
+        130,
+        64
+      ],
+      "tag": "4 hosts, tailnet IPs"
+    },
+    {
+      "id": "galaxy",
+      "type": "external",
+      "label": "Galaxy Roles",
+      "sublabel": "requirements.yml",
+      "pos": [
+        40,
+        470
+      ],
+      "size": [
+        130,
+        64
+      ],
+      "tag": "sshd \u00b7 firewalld \u00b7 sysctl"
+    },
+    {
+      "id": "playbook-edge",
+      "type": "backend",
+      "label": "vessel_edge Playbook",
+      "sublabel": "playbooks/group_vessel_edge",
+      "pos": [
+        240,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "tags per role"
+    },
+    {
+      "id": "playbook-core",
+      "type": "backend",
+      "label": "msoc_core Playbook",
+      "sublabel": "playbooks/group_msoc_core",
+      "pos": [
+        240,
+        470
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "haris-role",
+      "type": "backend",
+      "label": "haris Role",
+      "sublabel": "Signal K \u00b7 harisd \u00b7 Filebeat",
+      "pos": [
+        470,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "templates harisd.service.j2"
+    },
+    {
+      "id": "tailscale-role",
+      "type": "security",
+      "label": "Tailscale",
+      "sublabel": "artis3n.tailscale.machine",
+      "pos": [
+        470,
+        470
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "authkey, funnel"
+    },
+    {
+      "id": "elk-role",
+      "type": "backend",
+      "label": "elk_stack Role",
+      "sublabel": "ES \u00b7 Logstash \u00b7 Kibana",
+      "pos": [
+        470,
+        580
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "haris-signalk template"
+    },
+    {
+      "id": "edge-host",
+      "type": "frontend",
+      "label": "haris-sinilind / arthur",
+      "sublabel": "vessel edge (OpenPlotter)",
+      "pos": [
+        700,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "citadel",
+      "type": "frontend",
+      "label": "haris-citadel",
+      "sublabel": "M-SOC core node",
+      "pos": [
+        700,
+        470
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "es",
+      "type": "database",
+      "label": "Elasticsearch",
+      "sublabel": "haris-signalk-* indices",
+      "pos": [
+        700,
+        580
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "10000 field limit"
+    },
+    {
+      "id": "marine",
+      "type": "external",
+      "label": "marine_haris repo",
+      "sublabel": "collector source of truth",
+      "pos": [
+        470,
+        150
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "aggregator synced"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Watchtower repo (Ansible)",
+      "wraps": [
+        "playbook-edge",
+        "playbook-core",
+        "haris-role",
+        "tailscale-role",
+        "elk-role"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "tailnet \u2014 encrypted overlay network",
+      "wraps": [
+        "edge-host",
+        "citadel",
+        "es"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "operator-to-playbook-edge",
+      "from": "operator",
+      "to": "playbook-edge",
+      "label": "run playbooks",
+      "variant": "emphasis"
+    },
+    {
+      "id": "inventory-to-playbook-edge",
+      "from": "inventory",
+      "to": "playbook-edge",
+      "label": "hosts",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "galaxy-to-playbook-edge",
+      "from": "galaxy",
+      "to": "playbook-edge",
+      "label": "system roles"
+    },
+    {
+      "id": "playbook-edge-to-haris",
+      "from": "playbook-edge",
+      "to": "haris-role",
+      "label": "roles",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "playbook-edge-to-tailscale",
+      "from": "playbook-edge",
+      "to": "tailscale-role",
+      "label": "roles"
+    },
+    {
+      "id": "playbook-core-to-elk",
+      "from": "playbook-core",
+      "to": "elk-role",
+      "label": "roles",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "haris-to-edge",
+      "from": "haris-role",
+      "to": "edge-host",
+      "label": "configure",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "tailscale-to-edge",
+      "from": "tailscale-role",
+      "to": "edge-host",
+      "label": "join tailnet",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "elk-to-citadel",
+      "from": "elk-role",
+      "to": "citadel",
+      "label": "configure",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        620,
+        545
+      ]
+    },
+    {
+      "id": "elk-to-es",
+      "from": "elk-role",
+      "to": "es",
+      "label": "template",
+      "fromSide": "right",
+      "toSide": "left",
+      "variant": "security",
+      "labelAt": [
+        620,
+        660
+      ]
+    },
+    {
+      "id": "marine-to-haris",
+      "from": "marine",
+      "to": "haris-role",
+      "label": "aggregator source",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        545,
+        228
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Playbooks",
+      "items": [
+        "group_vessel_edge: sinilind + arthur",
+        "group_msoc_core: gateway + citadel",
+        "Per-role tags: -t haris, -t elk_stack, -t nodered",
+        "disabled_roles.yml kill switch per host"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "haris role",
+      "items": [
+        "Templated harisd.service.j2 \u2014 all HARIS_* env managed",
+        "OpenPlotter settings protected (idempotent sim-tcp merge only)",
+        "Raw CAN capture (canraw.yml) \u2014 never-delete logrotate",
+        "http_bridge.py hub: HTTP :8080 to TCP :10130"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "elk_stack role",
+      "items": [
+        "haris-signalk index template, 10000 total-field limit",
+        "Logstash: Beats :5044 + harisd json_lines :5045",
+        "ES field-limit incident fixed 2026-08-05 (guides/references)",
+        "Kibana :5601 on citadel"
+      ]
+    }
+  ]
+}

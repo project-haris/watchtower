@@ -88,6 +88,8 @@ ansible-galaxy install -r requirements.yml
 
 `guides/` is the repo-side home of the Project Haris operational docs (mirrored from the `project-haris` Hermes skill — update the skill first, then mirror). Index in [`guides/README.md`](guides/README.md). Highlights:
 
+> **Interactive architecture diagram:** [`guides/architecture-watchtower.html`](guides/architecture-watchtower.html) — archify-generated (dark/light themes, PNG/SVG export). Source spec: [`guides/architecture-watchtower.json`](guides/architecture-watchtower.json).
+
 - `project-haris-overview.md` — platform architecture, all Haris repos, topology. Start here.
 - `simulator-http-bridge-setup.md` — simulator → Haris bridge, Tailscale Funnel, every pitfall (verified)
 - `simulator-connection-checklist.md` — bench checklist: CAN wiring, candump, end-to-end verification
