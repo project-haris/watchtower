@@ -78,3 +78,7 @@ roles/nsswitch
 roles/wireguard
 roles/linux_hardening
 roles/tailscale
+
+# archify skill tooling (installed via npx skills add)
+.agents/
+skills-lock.json
