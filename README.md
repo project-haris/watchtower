@@ -1,46 +1,64 @@
 # Watchtower
 
-Watchtower is the Ansible automation repo for Project Haris vessel edge nodes and M-SOC core services. It provisions edge devices, deploys the Haris data collector and Signal K stack, and configures the onshore ELK pipeline that receives `haris_signalk` events.
+Ansible automation for **Project Haris** (حارس = Guardian) — the maritime cybersecurity lab's vessel edge nodes and M-SOC core. Watchtower provisions the edge devices, deploys the Haris Signal K stack and `harisd` collector, and configures the onshore ELK pipeline that receives `haris_signalk` events.
+
+Part of the oversight.ee maritime cybersecurity ecosystem, alongside ShipCrawler (vessel OSINT) and Sirb (N-agent orchestration).
 
 [![License](https://img.shields.io/github/license/ahmdngi/watchtower?style=flat-square)]()
 [![Language](https://img.shields.io/badge/language-Ansible-blue?style=flat-square)]()
 [![Stars](https://img.shields.io/github/stars/ahmdngi/watchtower?style=flat-square)](https://github.com/ahmdngi/watchtower)
 
+---
+
+## Inventory
+
+| Group | Host | Role |
+|---|---|---|
+| `vessel_edge` | `haris-sinilind` (100.77.88.72) | Vessel edge: NMEA 2000/0183 → Signal K → harisd → Filebeat (OpenPlotter, MacArthur HAT) |
+| `vessel_edge` | `haris-arthur` (100.127.13.61) | Bench/simulator vessel node (OpenPlotter, MacArthur HAT) |
+| `msoc_core` | `haris-gateway` (100.105.105.88) | M-SOC gateway |
+| `msoc_core` | `haris-citadel` (100.126.59.101) | M-SOC core: Logstash, Elasticsearch, Kibana, Zabbix server |
+
+All hosts are on the Tailscale tailnet — Ansible reaches them over the encrypted tunnel.
+
 ## Main Playbooks
 
-- `playbooks/group_vessel_edge/main.yml`: vessel edge devices
-- `playbooks/group_msoc_core/main.yml`: M-SOC core nodes such as Citadel
+```bash
+# Vessel edge devices (sinilind, arthur)
+ansible-playbook playbooks/group_vessel_edge/main.yml -D
 
-## Key Components
+# M-SOC core nodes (gateway, citadel)
+ansible-playbook playbooks/group_msoc_core/main.yml -D
 
-- `guides/`: operational guides for Project Haris (simulator bridge, field checks, MacArthur HAT, OpenPlotter install, data contract, index in `guides/README.md`)
-- `artis3n.tailscale.machine`: collection role that installs and authenticates Tailscale using `tailscale_authkey`
-- `roles/haris`: deploys Signal K-related vessel settings, the `harisd` collector, and Filebeat on vessel devices
-- `roles/haris` (simulator bridge): optional `simulator_bridge.yml` deploys the NMEA HTTP bridge (`http_bridge.py` + `simulator-bridge.service`) and merges the `sim-tcp` Signal K piped provider when `haris_simulator_bridge_enabled: true`
-- `roles/nodered`: installs Node-RED on Debian-based edge devices using the official Node-RED installer
-- `roles/mullvad_browser`: installs Mullvad Browser on Debian-based edge devices from Mullvad's official apt repository
-- `roles/elk_stack`: deploys Elasticsearch, Logstash, and Kibana on core nodes
-- `roles/firewalld`, `roles/sshd`, `roles/chrony`, `roles/zabbix_*`: supporting system services
+# Target a specific role or host
+ansible-playbook playbooks/group_vessel_edge/main.yml -l haris-sinilind -t haris -D
+ansible-playbook playbooks/group_vessel_edge/main.yml -l haris-sinilind -t nodered -D
+ansible-playbook playbooks/group_msoc_core/main.yml -l haris-citadel -t elk_stack -D
+```
+
+`-D` = `--diff` (dry-run friendly). Every role respects the `disabled_roles.yml` kill switch.
+
+## Roles
+
+**In-repo roles** (`roles/`):
+
+| Role | Purpose |
+|---|---|
+| `haris` | Signal K settings, `harisd` collector, Filebeat, simulator HTTP bridge, raw CAN capture (`canraw.yml`) |
+| `elk_stack` | Elasticsearch, Logstash, Kibana on core nodes (`haris-signalk-*` index template) |
+| `nodered` | Node-RED on Debian edge devices (official installer, as the runtime user) |
+| `mullvad_browser` | Mullvad Browser from Mullvad's official apt repo |
+| `zabbix_agent` / `zabbix_server` | Monitoring agents + server |
+
+**Common system roles** — referenced by the playbooks but installed as galaxy/git roles into `~/.ansible/roles` via `requirements.yml` (TalTech HPC gitlab sources): `sysctl`, `users_groups`, `sshd`, `soft_apt`, `firewalld`, `resolv_hosts`, `chrony`, `logrotate`, and more.
+
+```bash
+ansible-galaxy install -r requirements.yml
+```
+
+**Collections**: `artis3n.tailscale.machine` installs and authenticates Tailscale using `tailscale_authkey` (provide in group/host vars or vault).
 
 ## Data Flow
-
-On vessel nodes, `harisd` polls the local Signal K API and writes JSONL snapshots locally. When SOC forwarding is enabled, it also forwards newline-delimited JSON events to Citadel on TCP `5045`.
-
-On Citadel, Logstash accepts those events on TCP `5045` with `json_lines` and indexes them into `haris-signalk-*` in Elasticsearch.
-
-## Current Architecture
-
-```text
-Vessel sensors / NMEA
-  -> Signal K on haris-sinilind
-  -> harisd / data_aggregator.py
-  -> /opt/haris/logs/signalk_snapshots.jsonl
-  -> Filebeat
-  -> Tailscale encrypted tunnel
-  -> Logstash on haris-citadel:5044
-  -> Elasticsearch
-  -> Kibana
-```
 
 ```text
                    Project Haris Data Pipeline
@@ -62,113 +80,59 @@ Vessel sensors / NMEA
                      +-------------------------------------+
 ```
 
-## Common Runs
+- On vessel nodes, `harisd` polls the local Signal K API and writes JSONL snapshots; with SOC forwarding enabled it also pushes newline-delimited JSON events to Citadel TCP `5045`.
+- On Citadel, Logstash accepts those events (`json_lines`) and indexes them into `haris-signalk-*` in Elasticsearch.
+- Raw preservation: the simulator hub captures raw NMEA to `/opt/haris/raw/nmea_raw.log` (never deleted), and `haris-canraw.service` captures raw CAN frames on sinilind — per-frame detail survives even though the aggregator prunes `meta`/`values` maps from snapshots (~10× smaller docs, ends the ES field explosion).
 
-```bash
-ansible-playbook playbooks/group_vessel_edge/main.yml -D
-ansible-playbook playbooks/group_msoc_core/main.yml -D
-```
+## Guides
 
-Target a specific role or host when needed:
+`guides/` is the repo-side home of the Project Haris operational docs (mirrored from the `project-haris` Hermes skill — update the skill first, then mirror). Index in [`guides/README.md`](guides/README.md). Highlights:
 
-```bash
-ansible-playbook playbooks/group_vessel_edge/main.yml -l haris-sinilind -t haris -D
-ansible-playbook playbooks/group_vessel_edge/main.yml -l haris-sinilind -t nodered -D
-ansible-playbook playbooks/group_msoc_core/main.yml -l haris-citadel -t elk_stack -D
-```
+- `project-haris-overview.md` — platform architecture, all Haris repos, topology. Start here.
+- `simulator-http-bridge-setup.md` — simulator → Haris bridge, Tailscale Funnel, every pitfall (verified)
+- `simulator-connection-checklist.md` — bench checklist: CAN wiring, candump, end-to-end verification
+- `macarthur-hat.md` / `macarthur-hat-field-check.md` — HAT spec + post-deployment validation
+- `crew-app-signalk-data-contract.md` — Signal K delta contract for the Android crew app
+- `references/es-field-limit-fix.md` — 2026-08-05 incident: ES 1000-field limit blown by N2K payload
+- `references/raw-data-preservation.md` — raw NMEA/CAN capture policy, candump `-L` gotcha
+
+## Simulator Bridge (bench workflows)
+
+Optional per-host features of the `haris` role:
+
+- `haris_simulator_bridge_enabled: true` — deploys the NMEA HTTP bridge (`http_bridge.py`: HTTP `:8080` → TCP `:10130`, replay-on-connect) and merges the `sim-tcp` Signal K piped provider, without touching OpenPlotter-owned config.
+- `haris_simulator_funnel_enabled: true` — exposes the bridge publicly via Tailscale Funnel at `https://<host>.<tailnet>.ts.net/`. Requires the `funnel` node attribute in the tailnet policy (admin console, one-time); world-public — tear down with `sudo tailscale funnel reset`.
 
 ## Notes
 
-- The Haris role no longer depends on the Tailscale role. Tailscale is applied explicitly from the playbooks via `artis3n.tailscale.machine`.
-- On non-OpenPlotter hosts, Signal K is started by a systemd unit that uses `/usr/local/bin/signalk-server` and runs with `HOME={{ haris_home }}`.
-- Tailscale auth should be provided as `tailscale_authkey` in your group vars, host vars, or vaulted secrets.
-- The simulator HTTP bridge (bench NMEA 0183 over URL) is enabled per host with `haris_simulator_bridge_enabled: true`. It deploys a Python hub (HTTP `:8080` → TCP `:10130`) and merges the `sim-tcp` NMEA0183 piped provider into Signal K settings. Tailscale Funnel (`haris_simulator_funnel_enabled: true`) exposes the bridge publicly at `https://<host>.<tailnet>.ts.net/` — **requires the `funnel` node attribute in the tailnet policy file (admin console, one-time)** and is world-public; tear down with `sudo tailscale funnel reset` when not in use. Full architecture and pitfalls: the `project-haris` skill, `references/simulator-http-bridge-setup.md`.
-
-## Changelog
-
-### 2026-07-31
-
-- Added optional simulator HTTP bridge to the `haris` role: `simulator_bridge.yml` deploys `http_bridge.py` (HTTP `:8080` → TCP `:10130` with replay-on-connect), a `simulator-bridge` systemd unit, and idempotently merges the `sim-tcp` NMEA0183 piped provider (`suppress0183event: true`) into Signal K settings — without overwriting OpenPlotter-managed config. Enabled via `haris_simulator_bridge_enabled` (set on haris-arthur).
-- Added optional Tailscale Funnel enablement (`haris_simulator_funnel_enabled`) — issues cert + `tailscale funnel --bg`; requires the `funnel` node attribute in the tailnet policy.
-- **Fix**: on OpenPlotter hosts, `haris_manage_signalk_config` is now `false` (haris-sinilind + haris-arthur). The role's settings template is a minimal skeleton and would drop OpenPlotter's piped providers, security, and ssl if applied to `/home/pi/.signalk/settings.json`. OpenPlotter-owned settings are only touched by the idempotent `sim-tcp` merge.
-- **Fix**: Funnel enablement is a single shell task (`check_mode: false`) — the earlier `from_json`-based version broke under `--check` because command output is unavailable in check mode.
-- Verified end-to-end on haris-arthur: simulator → public Funnel URL → hub → Signal K → harisd → ELK (signalk-server 2.30.0).
-
-### 2026-07-30
-
-- Split the `haris` role so OpenPlotter hosts can keep hardware and Signal K service ownership separate from repo-managed Signal K `settings.json` values.
-- Updated OpenPlotter vessel host vars for `haris-sinilind` and `haris-arthur`, including live Signal K config path overrides to `/home/pi/.signalk`.
-- Removed unsupported Signal K admin password handling from `settings.json` and clarified that admin/security state is not managed by this repo through that file.
-- Fixed the `nodered` role to use the current upstream installer name and to run the installer as the target runtime user instead of `root`.
-- Fixed a `firewalld` role bug where unmanaged cleanup loops failed when discovery returned an empty list.
-- Added troubleshooting notes for OpenPlotter NodeSource `apt` issues and the Signal K `Unable to sign token: secretOrPrivateKey must have a value` error.
+- The `haris` role does not depend on the Tailscale role; Tailscale is applied explicitly from the playbooks via `artis3n.tailscale.machine`.
+- On non-OpenPlotter hosts, Signal K runs as a systemd unit via `/usr/local/bin/signalk-server` with `HOME={{ haris_home }}`.
+- On OpenPlotter hosts (sinilind, arthur) `haris_manage_signalk_config` is `false` — the role's settings template is a minimal skeleton and would drop OpenPlotter's piped providers; only the idempotent `sim-tcp` merge touches those settings.
+- Tailscale auth: provide `tailscale_authkey` in group vars, host vars, or vaulted secrets.
 
 ## Troubleshooting
 
-### OpenPlotter Fresh Install: NodeSource `apt update` Failure
+**OpenPlotter fresh install: NodeSource `apt update` 404** — `/etc/apt/sources.list.d/openplotterNodejs.list` points at a dead `node_18.x` bookworm path. Reinstall the keyring and write a single `node_22.x` source (`nodistro main`), remove duplicates/backups, `apt update`. Full commands in the changelog below.
 
-On a fresh OpenPlotter Bookworm install, `apt update` may fail because `/etc/apt/sources.list.d/openplotterNodejs.list` points at a NodeSource `bookworm` release path that returns `404`.
+**Signal K: `Unable to sign token: secretOrPrivateKey must have a value`** — remove the `security` strategy block from `$HOME/.signalk/settings.json` (and any `--securityenabled` server argument), restart Signal K.
 
-Example failing source entry:
+## Changelog
 
-```text
-deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main
-```
+Full history in [CHANGELOG.md](CHANGELOG.md).
 
-Example failure:
+- **Unreleased (2026-08-04/05)** — raw CAN capture role (`haris-canraw.service`, never-delete logrotate) on sinilind; aggregator `prune_payload()` strips `meta`/`values` from snapshots (~10× smaller N2K docs); ES `total_fields.limit` → 10000 (field-explosion incident fix); raw-data-preservation + es-field-limit guides.
+- **0.6.1 (2026-08-03)** — hub `http_bridge.py` v2: raw NMEA capture (50 MB rotate), `allow_reuse_address` fixes EADDRINUSE on restart.
+- **0.6.0 (2026-08-03)** — `@signalk/set-system-time` clock pitfall documented (bench sim feeds 2019 GPS time, fights chrony); AGENTS.md tracked.
+- **0.5.0 (2026-07-31)** — sinilind tailnet IP update.
+- **0.4.0 (2026-07-31)** — guides/ added; simulator HTTP bridge + Funnel; OpenPlotter `settings.json` protection; funnel under check mode.
 
-```text
-Err: https://deb.nodesource.com/node_18.x bookworm Release
-  404 Not Found
-E: The repository 'https://deb.nodesource.com/node_18.x bookworm Release' no longer has a Release file.
-```
+## Related
 
-Recovery steps:
-
-```bash
-# 1. Install the keyring
-sudo apt-get install -y ca-certificates curl gnupg
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-
-# 2. Write ONE correct source file (node_22.x, not 18.x)
-echo 'deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main' | sudo tee /etc/apt/sources.list.d/openplotterNodejs.list
-
-# 3. Remove any conflicting duplicates or old backups
-sudo rm -f /etc/apt/sources.list.d/nodesource.list
-sudo rm -f /etc/apt/sources.list.d/openplotterNodejs.list.bak
-
-# 4. Update
-sudo apt update
-```
-
-If the issue persists, inspect the active source file directly:
-
-```bash
-cat /etc/apt/sources.list.d/openplotterNodejs.list
-```
-
-### Signal K: `Unable to sign token: secretOrPrivateKey must have a value`
-
-If Signal K shows:
-
-```text
-Unable to sign token: secretOrPrivateKey must have a value
-```
-
-the current Signal K FAQ says to disable or reset security by removing the security strategy block from `settings.json`, which is usually located at `$HOME/.signalk/settings.json`.
-
-Remove this section:
-
-```json
-"security": {
-  "strategy": "./tokensecurity"
-},
-```
-
-If the server is started with the `--securityenabled` argument, remove that as well.
-
-After updating the configuration, restart Signal K.
+- **[ShipCrawler 2.0 (Geo-Watch)](https://github.com/ShipCrawler/shipcrawler-2.0)** — Agentic maritime perimeter awareness for offshore wind (Liivi 1+2, Gulf of Riga)
+- **[shipCrawler (1.x)](https://github.com/ahmdngi/shipCrawler)** — Production vessel-OSINT dashboard (IEEE Access 2026)
+- **[Sirb](https://github.com/ahmdngi/sirb)** — Agnostic N-agent task orchestration kernel (Swarm)
+- **Project Haris** — `marine_haris` (edge collector), `haris-crew-app` (offline-first crew app), `haris-command-center` (M-SOC dashboard), `tailscale-topography`, `vsat-honeypot`
+- **oversight.ee** — Maritime cybersecurity company site ([oversight.ee](https://www.oversight.ee))
 
 ## License
 
