@@ -133,7 +133,7 @@ Full history in [CHANGELOG.md](CHANGELOG.md).
 - **[ShipCrawler 2.0 (Geo-Watch)](https://github.com/ShipCrawler/shipcrawler-2.0)** — Agentic maritime perimeter awareness for offshore wind (Liivi 1+2, Gulf of Riga)
 - **[shipCrawler (1.x)](https://github.com/ahmdngi/shipCrawler)** — Production vessel-OSINT dashboard (IEEE Access 2026)
 - **[Sirb](https://github.com/ahmdngi/sirb)** — Agnostic N-agent task orchestration kernel (Swarm)
-- **Project Haris** — `marine_haris` (edge collector), `haris-crew-app` (offline-first crew app), `haris-command-center` (M-SOC dashboard), `tailscale-topography`, `vsat-honeypot`
+- **Project Haris** — `marine-haris` (edge collector), `haris-crew-app` (offline-first crew app), `haris-command-center` (M-SOC dashboard), `tailscale-topography`, `vsat-honeypot`
 - **oversight.ee** — Maritime cybersecurity company site ([oversight.ee](https://www.oversight.ee))
 
 ## License

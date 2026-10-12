@@ -20,7 +20,7 @@ The MacArthur HAT is a Raspberry Pi add-on board designed by Adrian Studer & Sai
 | AIS | ❌ | Optional MAIANA via UART0 |
 | Power | External 5V USB-C | Optional 12V→5V DC/DC module (ship battery direct), smart auto on/off |
 | Stackable | ❌ | ✅ Works with Moitessier HAT, dAISy HAT, Pypilot |
-| Software | marine_haris (custom Python) | OpenPlotter GUI config + Signal K |
+| Software | marine-haris (custom Python) | OpenPlotter GUI config + Signal K |
 | Isolation | NMEA 0183 isolated on some revisions | NMEA 0183 inputs opto-isolated; N2K non-isolated |
 | Drivers | Kernel SPI/UART | None needed (OpenPlotter) |
 | OS | Debian + systemd | OpenPlotter 3.x/4.x (RPi 3/4/5) |
@@ -31,7 +31,7 @@ The MacArthur HAT is a Raspberry Pi add-on board designed by Adrian Studer & Sai
 NMEA 2000 ──→ SPI0-1 CAN Interface ──┐
 2× NMEA 0183 ──→ UART2/UART4 (opto) ──┤
 Seatalk1 ──→ Dedicated input ────────┤
-1-Wire (DS18B20) ──→ GPIO ──────────┤──→ OpenPlotter / Signal K → marine_haris
+1-Wire (DS18B20) ──→ GPIO ──────────┤──→ OpenPlotter / Signal K → marine-haris
 I²C Sensors ──→ STEMMA QT/Qwiic ────┤
 MAIANA AIS (opt) ──→ UART0 ────────┘
                                      ↓
@@ -48,7 +48,7 @@ MAIANA AIS (opt) ──→ UART0 ────────┘
 
 ## Relevance to Project Haris
 
-The MacArthur HAT represents an **alternative/research path** for the Haris edge node — broader sensor support at the cost of relying on OpenPlotter for configuration rather than the custom `marine_haris` stack. It's useful for:
+The MacArthur HAT represents an **alternative/research path** for the Haris edge node — broader sensor support at the cost of relying on OpenPlotter for configuration rather than the custom `marine-haris` stack. It's useful for:
 - Vessels with legacy Seatalk1 instruments
 - Environmental monitoring (1-Wire temp, I²C sensors)
 - AIS integration without a separate dAISy HAT

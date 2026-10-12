@@ -6,7 +6,7 @@
 ## Architecture Overview
 
 ```
-Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine_haris
+Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine-haris
   → Local Storage (NVMe) → Tailscale VPN → M-SOC
   → Filebeat → Logstash → Elasticsearch → Kibana
   → Zabbix agent → Zabbix server (monitoring)
@@ -14,8 +14,8 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine_haris
 
 ## Repositories
 
-### 1. `marine_haris` — Edge Data Collector
-- **Path:** `/root/project-haris/marine_haris/`
+### 1. `marine-haris` — Edge Data Collector
+- **Path:** `/root/project-haris/marine-haris/`
 - **Language:** Python 3
 - **Hardware:** RPi 5 (16GB) + PiCAN-M HAT + NVMe 128GB + TP-Link Archer NX200
 - **BOM:** ~$710 total

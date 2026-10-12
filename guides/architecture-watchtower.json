@@ -199,7 +199,7 @@
     {
       "id": "marine",
       "type": "external",
-      "label": "marine_haris repo",
+      "label": "marine-haris repo",
       "sublabel": "collector source of truth",
       "pos": [
         470,

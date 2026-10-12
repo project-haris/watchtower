@@ -20,4 +20,4 @@ Ansible, Tailscale, ELK stack
 ## Notes
 
 - Part of the oversight.ee / maritime cybersecurity ecosystem
-- Related repos: shipcrawler, sirb, shipcrawler-worker, marine_haris, watchtower
+- Related repos: shipcrawler, sirb, shipcrawler-worker, marine-haris, watchtower
