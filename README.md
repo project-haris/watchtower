@@ -90,11 +90,10 @@ ansible-galaxy install -r requirements.yml
 
 > **Interactive architecture diagram:** [`guides/architecture-watchtower.html`](guides/architecture-watchtower.html) — archify-generated (dark/light themes, PNG/SVG export). Source spec: [`guides/architecture-watchtower.json`](guides/architecture-watchtower.json).
 
-- `project-haris-overview.md` — platform architecture, all Haris repos, topology. Start here.
+- `project-haris-overview.md` — platform architecture, the two published repos, topology. Start here.
 - `simulator-http-bridge-setup.md` — simulator → Haris bridge, Tailscale Funnel, every pitfall (verified)
 - `simulator-connection-checklist.md` — bench checklist: CAN wiring, candump, end-to-end verification
 - `macarthur-hat.md` / `macarthur-hat-field-check.md` — HAT spec + post-deployment validation
-- `crew-app-signalk-data-contract.md` — Signal K delta contract for the Android crew app
 - `references/es-field-limit-fix.md` — 2026-08-05 incident: ES 1000-field limit blown by N2K payload
 - `references/raw-data-preservation.md` — raw NMEA/CAN capture policy, candump `-L` gotcha
 
