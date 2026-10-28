@@ -15,11 +15,8 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine-haris
 ## Repositories
 
 > **Where these live (as of 2026-10-28).** `watchtower` and `marine-haris` are the only
-> repositories in the `project-haris` organization, both public and MIT-licensed.
-> `tailscale-topography` and `vsat-honeypot` are public and MIT-licensed under
-> [github.com/ahmdngi](https://github.com/ahmdngi). `haris-command-center` and
-> `haris-crew-app` are private and not published. Only the first two are part of the
-> platform release described in the accompanying manuscript.
+> repositories in the `project-haris` organization, both public and MIT-licensed, and the
+> two components the accompanying manuscript describes.
 
 ### 1. `marine-haris` — Edge Data Collector
 - **Path:** `/root/project-haris/marine-haris/`
@@ -70,71 +67,11 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine-haris
 - **Shared vars:** `vars_common_all.yml` — sysctl (IPv6 off), sshd (pubkey, AllowGroups admin root, IPv4-only), users (root, ahmed, ansible, admin with vaulted passwords), packages (apt/yum), comprehensive Estonian IP CIDR list (~230 entries), Zabbix server refs, cron (weekly /tmp cleanup)
 - **Requirements:** collections (ansible.posix, community.general 10.7.5, community.docker, community.mysql, grafana.grafana 5.7.0, zabbix.zabbix, artis3n.tailscale), roles (githubixx/harden-linux, TalTech HPC gitlab roles, geerlingguy/docker, weareinteractive/cron, robertdebock/logrotate, linux-system-roles)
 
-### 3. `tailscale-topography` — Network Topology Visualizer
-- **Path:** `/root/project-haris/tailscale-topography/`
-- **Language:** JavaScript (Node.js + vanilla JS frontend, zero deps)
-- **How it works:** `server.js` execs `tailscale status --json`, returns normalized topology JSON
-- **Frontend:** `public/index.html` — radial SVG graph + metric cards, refreshes every 30s
-- **Connection types:** Direct (green) vs DERP-relayed (amber)
-- **Deployment:** systemd, Docker (socket-mounts host tailscaled), Nix shell
-- **Config:** env vars: `HOST`, `PORT`, `TAILSCALE_TIMEOUT_MS`, `TAILSCALE_BIN`, `TAILSCALE_SOCKET`
-
-### 4. `vsat-honeypot` — SAILOR 900 VSAT Honeypot
-- **Path:** `/root/project-haris/vsat-honeypot/`
-- **Language:** Perl (zero CPAN deps — core modules only)
-- **Purpose:** Emulates Cobham SAILOR 900 VSAT Ka Installation Manager web interface
-- **Deployment:** Standalone Perl, Docker, Docker Compose, Nix shell
-- **Config:** `config/honeypot.json` (bind/port, rate limit, navigation mode, vessel identity)
-- **Endpoints:**
-  - `POST /api/login` — credential capture (admin/1234, service/service)
-  - `GET /api/status` — simulated device state
-  - `POST /api/config/network` — fake network config
-  - `POST /api/config/antenna` — fake antenna config
-  - `POST /api/command` — diagnostic console capture
-  - `POST /api/upload` — file upload capture
-- **Security:** In-memory rate limiting (180 req/60s), session cookies, GitLeaks CI scanning
-- **Server header spoof:** `Allegro-WebServer/3.2.1` (matches real SAILOR)
-
 ## Current Topology
 
 - **vessel_edge:** `haris-sinilind`
 - **msoc_core:** `haris-gateway`, `haris-citadel` (ELK + Zabbix server)
 - **Contact:** ahmed@ahmdngi.io
-
-### 5. `haris-crew-app` — Android Crew Monitoring App
-
-- **Path:** `/root/project-haris/haris-crew-app/`
-- **Language:** Dart (Flutter)
-- **Purpose:** Android app for vessel crew to monitor live Signal K data + ELK alerts
-- **Architecture:** Clean architecture — core/, data/, domain/, presentation/
-- **State:** Riverpod 2.x
-- **Cache:** SharedPreferences (no codegen required)
-- **Vessel data:** WebSocket to Signal K, delta parser with auto-reconnect + exponential backoff
-- **Alerts:** REST fetch + WebSocket push from Citadel relay
-- **Screens:** Dashboard (gauges, position, connection), Alerts (list + detail), Settings
-- **Auth:** Tailscale (device on tailnet)
-- **Build:** Flutter 3.44.0, AGP 9.0.1, Kotlin 2.3.20, Gradle 9.1.0, compileSdk 36, Java 21
-- **APK:** `flutter build apk --debug` → build/app/outputs/flutter-apk/app-debug.apk
-- **Package:** ee.haris.crew, minSdk 26
-- **Docs:** docs/ARCHITECTURE.md — full architecture document
-
-### 6. `haris-command-center` — Real-Time Monitoring Dashboard
-
-- **Path:** `/root/git-repos-personal/haris-command-center/`
-- **Repo:** https://github.com/ahmdngi/haris-command-center (**PRIVATE** — `config.py` contains real ES passwords + node IPs; do not make public without scrubbing creds to env vars)
-- **Language:** Python (Flask), vanilla JS, SSE, Leaflet 1.9.4
-- **Purpose:** real-time monitoring dashboard for the full Haris M-SOC — 17 collectors polling 4 Tailscale nodes every 10s, streaming via SSE
-- **Run:** `cd /root/git-repos-personal/haris-command-center && source venv/bin/activate && HOME=/root python3 app.py` → `http://100.72.133.89:5001` (must set `HOME=/root` or SSH key resolution breaks)
-- **Collectors:** Node, Elastic, Logstash, Pipeline, SignalK, Zabbix, Honeypot, Nmea, Tailscale, ZabbixAlert, DataFlow, FlapDetector, Filebeat, Hardware, HoneypotDetail, EsLifecycle, LogstashErrors
-- **Key design decisions:**
-  - SSH via `subprocess` (paramiko rejects Tailscale SSH "none" auth)
-  - Logstash `:9600` is localhost-only on citadel → collectors SSH + curl localhost
-  - ES search via SSH with `elastic` user (`kibana_system` can health/cat only); elastic pw from `/root/elastic` on citadel
-  - NMEA collector reads `:10130` (hub TCP broadcast), NOT `:10110` (orphaned in signalk 2.30)
-  - Leaflet CDN links must NOT get SRI hashes (wrong hashes block loading)
-  - Cache-busting: bump `?v=` on static files (css v5, sse v3, ui v7, core v5)
-- **⚠️ Known bug (2026-08-04):** `collectors/signalk_collector.py` calls `/signalk/v1/api/vessels/self` — **404s on signalk-server 2.30**; vessel telemetry panel + position map show nulls. Fix: API root + `.vessels[<uuid>]` resolution (mirror harisd's fallback). Rest of dashboard works.
-- **Release:** v0.3.0 (Leaflet vessel map + track), pushed 2026-08-04, branch `main`.
 
 ## NMEA 0183 → Signal K Ingestion
 
@@ -165,7 +102,6 @@ Policy (Ahmed, 2026-08-04): raw NMEA/CAN logs are NEVER deleted. Full guide: `re
 
 ## References
 
-- `references/crew-app-signalk-data-contract.md` — Exact Signal K delta format, WebSocket subscription flow, and supported paths for the Haris Crew App's data ingestion layer. Use when building synthetic AIS sources or debugging crew app connectivity.
 - `references/macarthur-hat.md` — MacArthur HAT specification, data flow, and comparison vs PiCAN-M HAT.
 - `references/watchtower-macarthur-field-check.md` — Post-deployment validation checklist for McArthur HAT on RPi5: CAN interface verification, candump, dmesg, UART, Signal K, harisd, Filebeat. Originally at `watchtower/roles/haris/MACARTHUR_FIELD_CHECK.md`.
 - `references/watchtower-data-aggregator.py` — Python data collector deployed to vessel edge: polls Signal K API, writes JSONL snapshots, forwards to SOC via Filebeat or legacy TCP.

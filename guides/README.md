@@ -9,7 +9,7 @@ the `project-haris` Hermes skill — add new guides here going forward.
 
 | File | What it is |
 | :--- | :--- |
-| `project-haris-overview.md` | Platform overview: architecture, all repos (`marine-haris`, `watchtower`, `tailscale-topography`, `vsat-honeypot`, `haris-crew-app`), topology, key components. Start here. |
+| `project-haris-overview.md` | Platform overview: architecture, the two published repos (`marine-haris`, `watchtower`), topology, key components. Start here. |
 | `simulator-http-bridge-setup.md` | **Full simulator → Haris bridge setup (verified 2026-07-31).** Architecture, Tailscale Funnel (ACL/cert/`--bg`), hub script + systemd unit, signalk-server 2.30 pipedProvider config, every pitfall (orphaned 10110, TcpProvider-is-a-client, `None` prefix, CRLF, `suppress0183event`), verification, teardown/reopen. |
 | `simulator-connection-checklist.md` | Bench checklist: CAN wiring verification, `candump`/interface checks, HTTP bridge + Funnel sections, end-to-end verification flow, troubleshooting. |
 | `macarthur-hat-field-check.md` | Post-deployment validation checklist for the MacArthur HAT vessel node: CAN overlay, interface state, bitrate, candump, UART devices, Signal K API, harisd, Filebeat, all-in-one command. |
