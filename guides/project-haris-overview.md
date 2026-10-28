@@ -14,6 +14,13 @@ Vessel NMEA Network → PiCAN-M HAT → Raspberry Pi 5 → marine-haris
 
 ## Repositories
 
+> **Where these live (as of 2026-10-28).** `watchtower` and `marine-haris` are the only
+> repositories in the `project-haris` organization, both public and MIT-licensed.
+> `tailscale-topography` and `vsat-honeypot` are public and MIT-licensed under
+> [github.com/ahmdngi](https://github.com/ahmdngi). `haris-command-center` and
+> `haris-crew-app` are private and not published. Only the first two are part of the
+> platform release described in the accompanying manuscript.
+
 ### 1. `marine-haris` — Edge Data Collector
 - **Path:** `/root/project-haris/marine-haris/`
 - **Language:** Python 3
